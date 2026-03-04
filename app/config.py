@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""
     app_name: str = "F1 Racing Intelligence API"
     debug: bool = False
+    # Comma-separated allowed CORS origins; defaults to localhost dev origins only
+    cors_origins: str = "http://localhost:3000,http://localhost:8000"
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
