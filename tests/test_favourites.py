@@ -12,8 +12,8 @@ def make_driver(db, ref="hamilton", name="Lewis Hamilton"):
 
 
 def register_and_login(client, username="fav_user", email="fav@test.com"):
-    client.post("/api/v1/auth/register", json={"username": username, "email": email, "password": "pass123"})
-    resp = client.post("/api/v1/auth/login", data={"username": username, "password": "pass123"})
+    client.post("/api/v1/auth/register", json={"username": username, "email": email, "password": "password123"})
+    resp = client.post("/api/v1/auth/login", data={"username": username, "password": "password123"})
     return {"Authorization": f"Bearer {resp.json()['access_token']}"}
 
 
