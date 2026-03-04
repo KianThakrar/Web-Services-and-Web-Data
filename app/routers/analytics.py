@@ -1,6 +1,6 @@
 """Analytics endpoints — aggregated F1 statistics and insights."""
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -37,8 +37,8 @@ def driver_nationalities(db: Session = Depends(get_db)):
 
 
 @router.get("/drivers/top-winners")
-def top_winners(limit: int = 10, db: Session = Depends(get_db)):
-    """Return the top race winners of all time by win count."""
+def top_winners(limit: int = Query(default=10, ge=1, le=100), db: Session = Depends(get_db)):
+    """Return the top race winners of all time by win count (max 100)."""
     return get_top_race_winners(db, limit)
 
 

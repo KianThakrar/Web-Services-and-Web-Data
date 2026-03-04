@@ -1,6 +1,6 @@
 """Prediction CRUD endpoints — auth-protected race outcome predictions."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -62,7 +62,7 @@ def update_prediction(
     prediction.predicted_driver_id = data.predicted_driver_id
     prediction.predicted_position = data.predicted_position
     prediction.notes = data.notes
-    prediction.updated_at = datetime.utcnow()
+    prediction.updated_at = datetime.now(UTC)
     db.commit()
     db.refresh(prediction)
     return prediction

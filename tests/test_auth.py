@@ -18,19 +18,19 @@ class TestRegistration:
         assert "hashed_password" not in data
 
     def test_register_duplicate_username_returns_400(self, client):
-        payload = {"username": "duplicate", "email": "a@example.com", "password": "pass123"}
+        payload = {"username": "duplicate", "email": "a@example.com", "password": "password123"}
         client.post("/api/v1/auth/register", json=payload)
         response = client.post("/api/v1/auth/register", json={
-            "username": "duplicate", "email": "b@example.com", "password": "pass123"
+            "username": "duplicate", "email": "b@example.com", "password": "password123"
         })
         assert response.status_code == 400
 
     def test_register_duplicate_email_returns_400(self, client):
         client.post("/api/v1/auth/register", json={
-            "username": "user1", "email": "same@example.com", "password": "pass123"
+            "username": "user1", "email": "same@example.com", "password": "password123"
         })
         response = client.post("/api/v1/auth/register", json={
-            "username": "user2", "email": "same@example.com", "password": "pass123"
+            "username": "user2", "email": "same@example.com", "password": "password123"
         })
         assert response.status_code == 400
 
@@ -71,10 +71,10 @@ class TestProtectedRoutes:
 
     def test_get_me_with_valid_token_returns_user(self, client):
         client.post("/api/v1/auth/register", json={
-            "username": "meuser", "email": "me@example.com", "password": "pass123"
+            "username": "meuser", "email": "me@example.com", "password": "password123"
         })
         login = client.post("/api/v1/auth/login", data={
-            "username": "meuser", "password": "pass123"
+            "username": "meuser", "password": "password123"
         })
         token = login.json()["access_token"]
         response = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
