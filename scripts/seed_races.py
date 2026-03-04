@@ -1,5 +1,7 @@
 """Seed races and race results from Jolpica F1 API for key seasons."""
 
+import time
+
 import httpx
 from sqlalchemy.orm import Session
 
@@ -33,6 +35,7 @@ def fetch_season_races(season: int) -> list[dict]:
         offset += limit
         if offset >= total:
             break
+        time.sleep(0.5)  # respect Jolpica rate limits
 
     return races
 
@@ -112,6 +115,7 @@ def seed_races(db: Session) -> int:
 
         db.commit()
         print(f"  Season {season}: {len(races_data)} races processed.")
+        time.sleep(2)  # pause between seasons to avoid rate limiting
 
     print(f"\nTotal: {total_races} new races, {total_results} new results seeded.")
     return total_races
