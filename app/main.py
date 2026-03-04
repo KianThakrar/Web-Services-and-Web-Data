@@ -20,7 +20,7 @@ app.add_middleware(
 )
 
 # Register routers
-from app.routers import health, auth, drivers, constructors, races, predictions, favourites, analytics  # noqa: E402
+from app.routers import health, auth, drivers, constructors, races, predictions, favourites, analytics, ai  # noqa: E402
 
 app.include_router(health.router)
 app.include_router(auth.router)
@@ -30,3 +30,4 @@ app.include_router(races.router)
 app.include_router(predictions.router)
 app.include_router(favourites.router)
 app.include_router(analytics.router)
+app.include_router(ai.router)
