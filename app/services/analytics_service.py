@@ -1,6 +1,7 @@
-"""Analytics queries — standings, nationality breakdowns, top winners, and season summaries."""
+"""Analytics queries — standings, nationality breakdowns, top winners, season summaries,
+head-to-head comparisons, circuit performance, and constructor era dominance."""
 
-from sqlalchemy import func
+from sqlalchemy import func, case
 from sqlalchemy.orm import Session
 
 from app.models.constructor import Constructor
@@ -133,3 +134,156 @@ def get_season_summary(db: Session, season: int) -> dict:
         "constructors_competed": constructors_competed,
         "total_points_awarded": float(total_points),
     }
+
+
+def _driver_career_stats(db: Session, driver_id: int) -> dict | None:
+    """Build career stats block for a single driver."""
+    driver = db.query(Driver).filter(Driver.id == driver_id).first()
+    if not driver:
+        return None
+
+    results = db.query(RaceResult).filter(RaceResult.driver_id == driver_id).all()
+    if not results:
+        return {
+            "driver_id": driver_id,
+            "driver_name": driver.name,
+            "nationality": driver.nationality,
+            "total_races": 0,
+            "total_wins": 0,
+            "total_points": 0.0,
+            "average_finish": None,
+            "podiums": 0,
+            "dnfs": 0,
+        }
+
+    finished = [r for r in results if r.finish_position is not None]
+    return {
+        "driver_id": driver_id,
+        "driver_name": driver.name,
+        "nationality": driver.nationality,
+        "total_races": len(results),
+        "total_wins": sum(1 for r in results if r.finish_position == 1),
+        "total_points": float(sum(r.points for r in results)),
+        "average_finish": round(sum(r.finish_position for r in finished) / len(finished), 2) if finished else None,
+        "podiums": sum(1 for r in results if r.finish_position and r.finish_position <= 3),
+        "dnfs": sum(1 for r in results if r.finish_position is None and r.points == 0),
+    }
+
+
+def get_head_to_head(db: Session, driver1_id: int, driver2_id: int) -> dict | None:
+    """Compare two drivers head-to-head: career stats and direct race comparisons."""
+    stats1 = _driver_career_stats(db, driver1_id)
+    stats2 = _driver_career_stats(db, driver2_id)
+    if stats1 is None or stats2 is None:
+        return None
+
+    # Races where both drivers competed — count who finished ahead
+    d1_ahead = 0
+    d2_ahead = 0
+    shared_races = (
+        db.query(RaceResult.race_id)
+        .filter(RaceResult.driver_id == driver1_id)
+        .intersect(
+            db.query(RaceResult.race_id).filter(RaceResult.driver_id == driver2_id)
+        )
+        .all()
+    )
+    for (race_id,) in shared_races:
+        r1 = db.query(RaceResult).filter(RaceResult.race_id == race_id, RaceResult.driver_id == driver1_id).first()
+        r2 = db.query(RaceResult).filter(RaceResult.race_id == race_id, RaceResult.driver_id == driver2_id).first()
+        if r1 and r2:
+            p1, p2 = r1.finish_position, r2.finish_position
+            if p1 is not None and p2 is not None:
+                if p1 < p2:
+                    d1_ahead += 1
+                elif p2 < p1:
+                    d2_ahead += 1
+            elif p1 is not None and p2 is None:
+                d1_ahead += 1
+            elif p2 is not None and p1 is None:
+                d2_ahead += 1
+
+    return {
+        "driver_1": stats1,
+        "driver_2": stats2,
+        "head_to_head": {
+            "shared_races": len(shared_races),
+            "driver_1_ahead": d1_ahead,
+            "driver_2_ahead": d2_ahead,
+        },
+    }
+
+
+def get_driver_circuit_performance(db: Session, driver_id: int, circuit_name: str) -> dict | None:
+    """Return a driver's historical performance record at a specific circuit."""
+    driver = db.query(Driver).filter(Driver.id == driver_id).first()
+    if not driver:
+        return None
+
+    results = (
+        db.query(RaceResult)
+        .join(Race, Race.id == RaceResult.race_id)
+        .filter(RaceResult.driver_id == driver_id, Race.circuit_name == circuit_name)
+        .order_by(Race.season)
+        .all()
+    )
+    if not results:
+        return None
+
+    finished = [r for r in results if r.finish_position is not None]
+    return {
+        "driver_id": driver_id,
+        "driver_name": driver.name,
+        "circuit_name": circuit_name,
+        "appearances": len(results),
+        "wins": sum(1 for r in results if r.finish_position == 1),
+        "podiums": sum(1 for r in results if r.finish_position and r.finish_position <= 3),
+        "best_finish": min((r.finish_position for r in finished), default=None),
+        "average_finish": round(sum(r.finish_position for r in finished) / len(finished), 2) if finished else None,
+        "total_points": float(sum(r.points for r in results)),
+        "results_by_season": [
+            {
+                "season": r.race.season,
+                "race_name": r.race.name,
+                "finish_position": r.finish_position,
+                "position_text": r.position_text,
+                "points": r.points,
+            }
+            for r in results
+        ],
+    }
+
+
+def get_constructor_era_dominance(db: Session) -> list[dict]:
+    """Rank constructors by total points within each decade era."""
+    results = (
+        db.query(
+            Constructor.name.label("constructor_name"),
+            Constructor.nationality,
+            func.sum(RaceResult.points).label("total_points"),
+            func.count(RaceResult.id).filter(RaceResult.finish_position == 1).label("wins"),
+            (func.floor(Race.season / 10) * 10).label("decade"),
+        )
+        .join(RaceResult, RaceResult.constructor_id == Constructor.id)
+        .join(Race, Race.id == RaceResult.race_id)
+        .group_by(Constructor.name, Constructor.nationality, (func.floor(Race.season / 10) * 10))
+        .order_by((func.floor(Race.season / 10) * 10), func.sum(RaceResult.points).desc())
+        .all()
+    )
+
+    # For each decade pick the top constructor
+    eras: dict[int, dict] = {}
+    for r in results:
+        decade = int(r.decade)
+        era_label = f"{decade}s"
+        if decade not in eras:
+            eras[decade] = {
+                "era": era_label,
+                "decade_start": decade,
+                "dominant_constructor": r.constructor_name,
+                "dominant_constructor_nationality": r.nationality,
+                "total_points": float(r.total_points or 0),
+                "wins": r.wins or 0,
+            }
+
+    return sorted(eras.values(), key=lambda x: x["decade_start"])
