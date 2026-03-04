@@ -20,6 +20,7 @@ app.add_middleware(
 )
 
 # Register routers
-from app.routers import health  # noqa: E402
+from app.routers import health, auth  # noqa: E402
 
 app.include_router(health.router)
+app.include_router(auth.router)

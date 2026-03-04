@@ -10,9 +10,12 @@ psycopg2-binary==2.9.10
 # Authentication
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
+bcrypt==4.2.1
 
 # Configuration
 pydantic-settings==2.7.1
+pydantic[email]==2.12.5
+python-multipart==0.0.20
 
 # HTTP client (for seeding)
 httpx==0.28.1
