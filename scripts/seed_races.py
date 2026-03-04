@@ -15,12 +15,26 @@ SEASONS_TO_SEED = [2020, 2021, 2022, 2023, 2024]
 
 
 def fetch_season_races(season: int) -> list[dict]:
-    """Fetch all race results for a given season."""
-    url = f"{JOLPICA_BASE}/{season}/results.json?limit=1000"
-    response = httpx.get(url, timeout=60)
-    response.raise_for_status()
-    data = response.json()
-    return data["MRData"]["RaceTable"]["Races"]
+    """Fetch all races for a season by paginating through rounds."""
+    races = []
+    offset = 0
+    limit = 30
+
+    while True:
+        url = f"{JOLPICA_BASE}/{season}/results.json?limit={limit}&offset={offset}"
+        response = httpx.get(url, timeout=60)
+        response.raise_for_status()
+        data = response.json()
+        batch = data["MRData"]["RaceTable"]["Races"]
+        if not batch:
+            break
+        races.extend(batch)
+        total = int(data["MRData"]["total"])
+        offset += limit
+        if offset >= total:
+            break
+
+    return races
 
 
 def seed_races(db: Session) -> int:
