@@ -25,6 +25,7 @@ from app.services.analytics_service import (
     get_driver_standings as _get_driver_standings,
     get_season_summary,
     get_top_race_winners,
+    get_win_probability,
 )
 from app.services.ai_service import get_race_summary
 
@@ -200,6 +201,29 @@ def get_all_time_top_winners(limit: int = 10) -> list[dict]:
     db = SessionLocal()
     try:
         return get_top_race_winners(db, limit)
+    finally:
+        db.close()
+
+
+@mcp.tool()
+def get_driver_win_probability(driver_id: int, circuit_name: str = "") -> dict:
+    """Estimate a driver's probability of winning at a given circuit.
+
+    Combines circuit win rate (40%), overall career win rate (30%),
+    recent form over last 10 races (20%), and constructor strength (10%)
+    into a probability score between 0 and 1.
+
+    Args:
+        driver_id: The numeric ID of the driver.
+        circuit_name: Optional circuit name (e.g. 'Monza'). If omitted,
+                      returns an overall win probability across all circuits.
+    """
+    db = SessionLocal()
+    try:
+        result = get_win_probability(db, driver_id, circuit_name or None)
+        if result is None:
+            return {"error": f"Driver {driver_id} not found"}
+        return result
     finally:
         db.close()
 

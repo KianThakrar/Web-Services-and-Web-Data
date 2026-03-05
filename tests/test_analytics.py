@@ -73,3 +73,24 @@ class TestAnalyticsEndpoints:
         assert data["season"] == 2024
         assert data["total_races"] == 2
         assert "drivers_competed" in data
+
+    def test_win_probability_returns_200_with_circuit(self, client, db):
+        d1, d2, _, _ = seed_analytics_data(db)
+        response = client.get(f"/api/v1/analytics/drivers/{d1.id}/win-probability?circuit_name=Bahrain")
+        assert response.status_code == 200
+        data = response.json()
+        assert "win_probability" in data
+        assert "factors" in data
+        assert 0.0 <= data["win_probability"] <= 1.0
+
+    def test_win_probability_returns_200_overall(self, client, db):
+        d1, _, _, _ = seed_analytics_data(db)
+        response = client.get(f"/api/v1/analytics/drivers/{d1.id}/win-probability")
+        assert response.status_code == 200
+        data = response.json()
+        assert "win_probability" in data
+        assert data["win_probability"] > 0
+
+    def test_win_probability_returns_404_for_unknown_driver(self, client):
+        response = client.get("/api/v1/analytics/drivers/99999/win-probability")
+        assert response.status_code == 404
