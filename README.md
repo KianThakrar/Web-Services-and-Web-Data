@@ -6,19 +6,55 @@ Built for COMP3011 Web Services and Web Data (University of Leeds, 2025/26).
 
 ---
 
-## Quick Start (Docker — Recommended)
+## Quick Start — Docker (Recommended for Examiners)
+
+**Prerequisites:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running. Nothing else needed.
 
 ```bash
 git clone https://github.com/KianThakrar/Web-Services-and-Web-Data.git
 cd Web-Services-and-Web-Data
-cp .env.example .env
 docker-compose up --build
 ```
 
-The API will be available at **http://localhost:8000**
-Interactive docs at **http://localhost:8000/docs**
+**What happens on first run:**
+1. PostgreSQL starts inside Docker (no local database installation needed)
+2. F1 data is automatically fetched from the Jolpica API and seeded — **this takes ~60 seconds, please wait**
+3. The API starts at **http://localhost:8000**
 
-> On first start, the container automatically seeds all F1 data from the Jolpica API (drivers, constructors, races 2020–2024). This takes ~30 seconds.
+**Once running:**
+- Interactive API docs: **http://localhost:8000/docs**
+- Health check: **http://localhost:8000/health**
+
+> The AI race summary endpoint works without an `ANTHROPIC_API_KEY` — summaries use a deterministic fallback and are cached on first request.
+
+**To stop:**
+```bash
+docker-compose down        # stop (data is preserved)
+docker-compose down -v     # stop and wipe database (fresh start next run)
+```
+
+---
+
+## Troubleshooting
+
+**Port 8000 already in use**
+
+Edit `docker-compose.yml`, change `"8000:8000"` to `"8001:8000"`, then visit `http://localhost:8001`.
+
+**Seeding appears to hang**
+
+The seed script fetches ~100 races across 5 seasons from an external API and prints progress as it goes. Wait up to 90 seconds. You will see `✓ Seed complete.` when it finishes, followed by `Uvicorn running on http://0.0.0.0:8000`.
+
+**"Connection refused" when visiting localhost:8000**
+
+The API only starts after seeding completes. Keep watching the Docker logs.
+
+**Starting completely fresh**
+
+```bash
+docker-compose down -v     # removes the database volume
+docker-compose up --build  # rebuilds and reseeds from scratch
+```
 
 ---
 
@@ -31,33 +67,38 @@ Interactive docs at **http://localhost:8000/docs**
 ### Steps
 
 ```bash
-# 1. Clone and enter the repo
 git clone https://github.com/KianThakrar/Web-Services-and-Web-Data.git
 cd Web-Services-and-Web-Data
 
-# 2. Create virtual environment
 python3 -m venv venv
 source venv/bin/activate        # Windows: venv\Scripts\activate
 
-# 3. Install dependencies
 pip install -r requirements.txt
 
-# 4. Configure environment
 cp .env.example .env
-# Edit .env — set DATABASE_URL to your PostgreSQL instance
+# Edit .env and set DATABASE_URL to your local PostgreSQL instance
 
-# 5. Create the database
-createdb f1_racing_db            # or use pgAdmin / psql
+createdb f1_racing_db           # or create via pgAdmin / psql
 
-# 6. Run migrations
 alembic upgrade head
 
-# 7. Seed data
-python -m scripts.seed
+python -m scripts.seed          # ~60 seconds
 
-# 8. Start the API
 uvicorn app.main:app --reload
 ```
+
+---
+
+## Running Tests
+
+Tests use SQLite in-memory — no PostgreSQL or Docker required.
+
+```bash
+source venv/bin/activate
+pytest tests/ -v
+```
+
+All 49 tests should pass.
 
 ---
 
@@ -111,11 +152,36 @@ uvicorn app.main:app --reload
 | GET | `/api/v1/analytics/drivers/nationalities` | Driver nationality breakdown |
 | GET | `/api/v1/analytics/drivers/top-winners` | All-time top race winners |
 | GET | `/api/v1/analytics/seasons/{season}/summary` | Season summary statistics |
+| GET | `/api/v1/analytics/drivers/{id}/vs/{id2}` | Head-to-head career comparison |
+| GET | `/api/v1/analytics/drivers/{id}/circuits/{name}` | Driver circuit performance history |
+| GET | `/api/v1/analytics/constructors/era-dominance` | Constructor dominance by decade |
 
 ### AI
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/v1/ai/races/{id}/summary` | AI-generated race narrative (cache-first) |
+
+---
+
+## AI Integration
+
+The `/api/v1/ai/races/{id}/summary` endpoint uses a **cache-first strategy**:
+
+1. Checks `ai_summary_cache` table — returns instantly if found (`"cached": true`)
+2. If `ANTHROPIC_API_KEY` is set — calls Claude Haiku for a live summary
+3. If no API key — generates a deterministic fallback summary
+
+This ensures **full reproducibility** for examiners cloning without an API key.
+
+---
+
+## Security
+
+- JWT authentication with bcrypt password hashing
+- Rate limiting on auth endpoints (10 req/min per IP)
+- Security response headers (X-Content-Type-Options, X-Frame-Options, Referrer-Policy)
+- Input validation: username 3–50 chars alphanumeric, password 8–72 chars
+- Configurable CORS origins (no wildcard)
 
 ---
 
@@ -156,20 +222,6 @@ python mcp_server.py
 
 ---
 
-## Running Tests
-
-```bash
-# Run all tests
-pytest tests/ -v
-
-# Run specific module
-pytest tests/test_auth.py -v
-```
-
-All tests use SQLite in-memory — no PostgreSQL required for testing.
-
----
-
 ## Project Structure
 
 ```
@@ -184,7 +236,7 @@ All tests use SQLite in-memory — no PostgreSQL required for testing.
 │   ├── database.py     # SQLAlchemy engine and session
 │   └── main.py         # FastAPI application entry point
 ├── scripts/            # Data seeding scripts
-├── tests/              # Pytest test suite
+├── tests/              # Pytest test suite (49 tests)
 ├── alembic/            # Database migrations
 ├── mcp_server.py       # MCP server
 ├── Dockerfile
@@ -195,18 +247,6 @@ All tests use SQLite in-memory — no PostgreSQL required for testing.
 
 ---
 
-## AI Integration
-
-The `/api/v1/ai/races/{id}/summary` endpoint uses a **cache-first strategy**:
-
-1. Checks `ai_summary_cache` table — returns instantly if found
-2. If `ANTHROPIC_API_KEY` is set — calls Claude Haiku for a live summary
-3. If no API key — generates a deterministic fallback summary
-
-This ensures **full reproducibility** for examiners cloning without an API key.
-
----
-
 ## Data Source
 
-Race data is sourced from the [Jolpica F1 API](https://api.jolpi.ca/ergast/f1/) (Ergast-compatible), a free and publicly available Formula 1 dataset covering all seasons from 1950 to present.
+Race data is sourced from the [Jolpica F1 API](https://api.jolpi.ca/ergast/f1/) (Ergast-compatible), a free and publicly available Formula 1 dataset covering all seasons from 1950 to present. Seasons 2020–2024 are seeded (~100 races, ~2000 results).
