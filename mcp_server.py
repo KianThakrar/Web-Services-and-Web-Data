@@ -21,7 +21,7 @@ from app.models.race import Race
 from app.models.race_result import RaceResult
 from app.services.analytics_service import (
     get_constructor_standings,
-    get_driver_standings,
+    get_driver_standings as _get_driver_standings,
     get_season_summary,
     get_top_race_winners,
 )
@@ -156,7 +156,7 @@ def get_driver_standings(season: int) -> list[dict]:
     """
     db = SessionLocal()
     try:
-        return get_driver_standings(db, season)
+        return _get_driver_standings(db, season)
     finally:
         db.close()
 
