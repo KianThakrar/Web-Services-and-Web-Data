@@ -80,3 +80,30 @@ class TestProtectedRoutes:
         response = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
         assert response.status_code == 200
         assert response.json()["username"] == "meuser"
+
+
+class TestLogout:
+    def _register_and_login(self, client):
+        client.post("/api/v1/auth/register", json={
+            "username": "logoutuser", "email": "logout@example.com", "password": "password123"
+        })
+        login = client.post("/api/v1/auth/login", data={
+            "username": "logoutuser", "password": "password123"
+        })
+        return login.json()["access_token"]
+
+    def test_logout_without_token_returns_401(self, client):
+        response = client.post("/api/v1/auth/logout")
+        assert response.status_code == 401
+
+    def test_logout_with_valid_token_returns_200(self, client):
+        token = self._register_and_login(client)
+        response = client.post("/api/v1/auth/logout", headers={"Authorization": f"Bearer {token}"})
+        assert response.status_code == 200
+        assert response.json()["message"] == "Logged out successfully"
+
+    def test_logout_blacklists_token_so_me_returns_401(self, client):
+        token = self._register_and_login(client)
+        client.post("/api/v1/auth/logout", headers={"Authorization": f"Bearer {token}"})
+        response = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
+        assert response.status_code == 401
