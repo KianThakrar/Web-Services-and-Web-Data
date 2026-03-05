@@ -1,15 +1,16 @@
 """MCP (Model Context Protocol) server for the F1 Racing Intelligence API.
 
 Exposes F1 data as tools that can be used by MCP-compatible AI clients
-(Claude Desktop, Claude Code, etc.).
+(Claude Desktop, Claude Code, VS Code Copilot, etc.).
 
 Usage:
-    python mcp_server.py                        # stdio transport (default)
-    mcp install mcp_server.py                   # install into Claude Desktop
+    python mcp_server.py              # stdio transport — for Claude Desktop / Claude Code
+    python mcp_server.py --sse        # SSE transport  — HTTP on port 3001, for any MCP client
+    python scripts/setup_mcp.py       # auto-configure Claude Desktop + VS Code Copilot
 
 Configuration:
     Set DATABASE_URL environment variable to point to your PostgreSQL instance.
-    Defaults to the same value as the main API.
+    Defaults to the docker-compose database on port 5433.
 """
 
 from mcp.server.fastmcp import FastMCP
@@ -204,4 +205,19 @@ def get_all_time_top_winners(limit: int = 10) -> list[dict]:
 
 
 if __name__ == "__main__":
-    mcp.run(transport="stdio")
+    import argparse
+
+    parser = argparse.ArgumentParser(description="F1 Racing Intelligence MCP Server")
+    parser.add_argument(
+        "--sse",
+        action="store_true",
+        help="Use SSE (HTTP) transport on port 3001 instead of stdio",
+    )
+    parser.add_argument("--port", type=int, default=3001, help="Port for SSE transport (default: 3001)")
+    args = parser.parse_args()
+
+    if args.sse:
+        print(f"Starting MCP server with SSE transport on http://localhost:{args.port}/sse")
+        mcp.run(transport="sse", host="0.0.0.0", port=args.port)
+    else:
+        mcp.run(transport="stdio")
