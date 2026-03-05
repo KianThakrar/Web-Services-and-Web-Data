@@ -15,7 +15,8 @@ from scripts.seed_races import seed_races
 
 
 def run(reset: bool = False) -> None:
-    print("=== F1 Racing Intelligence API — Data Seed ===\n")
+    print("=== F1 Racing Intelligence API — Data Seed ===")
+    print("Fetching data from Jolpica F1 API. This takes ~60 seconds on first run.\n")
 
     if reset:
         print("Dropping and recreating all tables...")
