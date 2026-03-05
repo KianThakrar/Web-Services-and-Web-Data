@@ -254,6 +254,90 @@ def get_driver_circuit_performance(db: Session, driver_id: int, circuit_name: st
     }
 
 
+def get_win_probability(db: Session, driver_id: int, circuit_name: str | None = None) -> dict | None:
+    """Estimate a driver's win probability using weighted historical factors.
+
+    Combines four signals into a single probability score [0, 1]:
+      - circuit_win_rate   (40%): wins / appearances at the specified circuit
+      - overall_win_rate   (30%): career wins / total starts
+      - recent_form        (20%): wins in the driver's last 10 races
+      - constructor_weight (10%): their constructor's all-time win rate
+
+    When no circuit is specified the circuit factor is replaced by the
+    driver's overall win rate, keeping the formula self-consistent.
+    """
+    driver = db.query(Driver).filter(Driver.id == driver_id).first()
+    if not driver:
+        return None
+
+    all_results = db.query(RaceResult).filter(RaceResult.driver_id == driver_id).all()
+    if not all_results:
+        return {"driver_id": driver_id, "driver_name": driver.name, "win_probability": 0.0,
+                "circuit_name": circuit_name, "factors": {}}
+
+    total_races = len(all_results)
+    total_wins = sum(1 for r in all_results if r.finish_position == 1)
+    overall_win_rate = total_wins / total_races if total_races else 0.0
+
+    # Recent form: last 10 races ordered by race id (proxy for chronology)
+    recent = sorted(all_results, key=lambda r: r.race_id)[-10:]
+    recent_form = sum(1 for r in recent if r.finish_position == 1) / len(recent) if recent else 0.0
+
+    # Circuit-specific win rate
+    if circuit_name:
+        circuit_results = (
+            db.query(RaceResult)
+            .join(Race, Race.id == RaceResult.race_id)
+            .filter(RaceResult.driver_id == driver_id, Race.circuit_name == circuit_name)
+            .all()
+        )
+        circuit_appearances = len(circuit_results)
+        circuit_wins = sum(1 for r in circuit_results if r.finish_position == 1)
+        circuit_win_rate = circuit_wins / circuit_appearances if circuit_appearances else overall_win_rate
+    else:
+        circuit_win_rate = overall_win_rate
+        circuit_appearances = None
+        circuit_wins = None
+
+    # Constructor win weight: last known constructor's all-time win rate
+    constructor_id = all_results[-1].constructor_id if all_results else None
+    if constructor_id:
+        constructor_wins = db.query(func.count(RaceResult.id)).filter(
+            RaceResult.constructor_id == constructor_id, RaceResult.finish_position == 1
+        ).scalar() or 0
+        constructor_total = db.query(func.count(RaceResult.id)).filter(
+            RaceResult.constructor_id == constructor_id
+        ).scalar() or 1
+        constructor_weight = constructor_wins / constructor_total
+    else:
+        constructor_weight = 0.0
+
+    probability = round(
+        0.40 * circuit_win_rate
+        + 0.30 * overall_win_rate
+        + 0.20 * recent_form
+        + 0.10 * constructor_weight,
+        4,
+    )
+
+    return {
+        "driver_id": driver_id,
+        "driver_name": driver.name,
+        "circuit_name": circuit_name,
+        "win_probability": probability,
+        "factors": {
+            "circuit_win_rate": round(circuit_win_rate, 4),
+            "circuit_appearances": circuit_appearances,
+            "circuit_wins": circuit_wins,
+            "overall_win_rate": round(overall_win_rate, 4),
+            "total_races": total_races,
+            "total_wins": total_wins,
+            "recent_form_rate": round(recent_form, 4),
+            "constructor_win_rate": round(constructor_weight, 4),
+        },
+    }
+
+
 def get_constructor_era_dominance(db: Session) -> list[dict]:
     """Rank constructors by total points within each decade era."""
     results = (

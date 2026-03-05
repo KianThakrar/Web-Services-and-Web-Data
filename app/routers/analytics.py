@@ -13,6 +13,7 @@ from app.services.analytics_service import (
     get_head_to_head,
     get_season_summary,
     get_top_race_winners,
+    get_win_probability,
 )
 
 router = APIRouter(prefix="/api/v1/analytics", tags=["Analytics"])
@@ -85,3 +86,26 @@ def constructor_era_dominance(db: Session = Depends(get_db)):
     and returns the dominant constructor for each decade with win counts.
     """
     return get_constructor_era_dominance(db)
+
+
+@router.get("/drivers/{driver_id}/win-probability")
+def driver_win_probability(
+    driver_id: int,
+    circuit_name: str | None = Query(default=None, description="Optional circuit name to scope the prediction"),
+    db: Session = Depends(get_db),
+):
+    """
+    Estimate a driver's probability of winning at a given circuit.
+
+    Combines four weighted factors into a score between 0 and 1:
+    - Circuit win rate (40%) — historical wins at this specific circuit
+    - Overall career win rate (30%) — all-time wins across all circuits
+    - Recent form (20%) — win rate across the last 10 races
+    - Constructor strength (10%) — their constructor's all-time win rate
+
+    When no circuit is specified, overall win rate replaces the circuit factor.
+    """
+    result = get_win_probability(db, driver_id, circuit_name)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Driver not found")
+    return result
