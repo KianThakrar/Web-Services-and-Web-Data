@@ -1,12 +1,17 @@
-"""Authentication router: register, login, and current user endpoints."""
+"""Authentication router: register, login, logout, and current user endpoints."""
+
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
+from jose import jwt as _jwt
 from sqlalchemy.orm import Session
 
-from app.auth.jwt import create_access_token, get_current_user
+from app.auth.jwt import create_access_token, get_current_user, oauth2_scheme
+from app.config import settings
 from app.database import get_db
 from app.main import limiter
+from app.models.token_blacklist import TokenBlacklist
 from app.models.user import User
 from app.schemas.user import Token, UserCreate, UserResponse
 from app.services.user_service import authenticate_user, register_user
@@ -28,6 +33,21 @@ def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db
     user = authenticate_user(db, form_data.username, form_data.password)
     token = create_access_token({"sub": user.username})
     return Token(access_token=token)
+
+
+@router.post("/logout", status_code=status.HTTP_200_OK)
+def logout(
+    token: str = Depends(oauth2_scheme),
+    current_user: User = Depends(get_current_user),  # noqa: ARG001 (validates token before blacklisting)
+    db: Session = Depends(get_db),
+):
+    """Revoke the current access token. All subsequent requests with this token return 401."""
+    payload = _jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+    jti = payload.get("jti")
+    expires_at = datetime.fromtimestamp(payload["exp"], tz=UTC)
+    db.add(TokenBlacklist(jti=jti, expires_at=expires_at))
+    db.commit()
+    return {"message": "Logged out successfully"}
 
 
 @router.get("/me", response_model=UserResponse)

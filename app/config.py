@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     debug: bool = False
     # Comma-separated allowed CORS origins; defaults to localhost dev origins only
     cors_origins: str = "http://localhost:3000,http://localhost:8000"
+    # Optional previous secret key — set during zero-downtime JWT key rotation
+    secret_key_previous: str = ""
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

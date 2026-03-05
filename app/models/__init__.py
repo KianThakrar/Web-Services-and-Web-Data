@@ -8,6 +8,7 @@ from app.models.race_result import RaceResult
 from app.models.prediction import Prediction
 from app.models.favourite import Favourite
 from app.models.ai_summary import AISummaryCache
+from app.models.token_blacklist import TokenBlacklist
 
 __all__ = [
     "User",
@@ -18,4 +19,5 @@ __all__ = [
     "Prediction",
     "Favourite",
     "AISummaryCache",
+    "TokenBlacklist",
 ]
