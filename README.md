@@ -98,7 +98,7 @@ source venv/bin/activate
 pytest tests/ -v
 ```
 
-All 49 tests should pass.
+All 55 tests should pass.
 
 ---
 
@@ -110,6 +110,7 @@ All 49 tests should pass.
 | POST | `/api/v1/auth/register` | Register a new user |
 | POST | `/api/v1/auth/login` | Login and receive JWT token |
 | GET | `/api/v1/auth/me` | Get current user profile |
+| POST | `/api/v1/auth/logout` | Revoke current token (blacklists JTI) |
 
 ### Drivers
 | Method | Endpoint | Description |
@@ -155,6 +156,7 @@ All 49 tests should pass.
 | GET | `/api/v1/analytics/drivers/{id}/vs/{id2}` | Head-to-head career comparison |
 | GET | `/api/v1/analytics/drivers/{id}/circuits/{name}` | Driver circuit performance history |
 | GET | `/api/v1/analytics/constructors/era-dominance` | Constructor dominance by decade |
+| GET | `/api/v1/analytics/drivers/{id}/win-probability` | Win probability model (weighted) |
 
 ### AI
 | Method | Endpoint | Description |
@@ -178,6 +180,8 @@ This ensures **full reproducibility** for examiners cloning without an API key.
 ## Security
 
 - JWT authentication with bcrypt password hashing
+- JWT token revocation via JTI blacklist — logout invalidates the token immediately
+- JWT key rotation support via `SECRET_KEY_PREVIOUS` for zero-downtime key changes
 - Rate limiting on auth endpoints (10 req/min per IP)
 - Security response headers (X-Content-Type-Options, X-Frame-Options, Referrer-Policy)
 - Input validation: username 3–50 chars alphanumeric, password 8–72 chars
@@ -189,7 +193,7 @@ This ensures **full reproducibility** for examiners cloning without an API key.
 
 The project includes an MCP (Model Context Protocol) server for integration with AI clients like Claude Desktop and Claude Code.
 
-### Tools available:
+### Tools available (10 tools):
 - `search_drivers` — search drivers by name or nationality
 - `get_driver_details` — full driver profile
 - `list_races` — races by season
@@ -199,10 +203,18 @@ The project includes an MCP (Model Context Protocol) server for integration with
 - `get_constructor_standings_tool` — constructor standings
 - `get_season_summary_tool` — season statistics
 - `get_all_time_top_winners` — all-time win leaderboard
+- `get_driver_win_probability` — win probability model (circuit + career + form + constructor)
 
 ### Run the MCP server:
+
+**stdio transport** (Claude Desktop / Claude Code):
 ```bash
 python mcp_server.py
+```
+
+**SSE transport** (HTTP — for any MCP client):
+```bash
+python mcp_server.py --sse          # serves on http://localhost:3001/sse
 ```
 
 ### Add to Claude Desktop (`claude_desktop_config.json`):
@@ -220,6 +232,35 @@ python mcp_server.py
 }
 ```
 
+### Multi-Client MCP Demo
+
+The same SSE MCP server works with multiple AI clients — no server changes required.
+See [`examples/`](examples/) for ready-to-run demos:
+
+| Client | File | SDK |
+|--------|------|-----|
+| Anthropic Claude | `examples/mcp_claude_demo.py` | `anthropic` + `mcp` |
+| OpenAI Agents | `examples/mcp_openai_demo.py` | `openai-agents` |
+| Google Gemini | `examples/mcp_gemini_demo.py` | `google-adk` |
+
+```bash
+# Start SSE server first
+python mcp_server.py --sse
+
+# Then run any demo
+python examples/mcp_claude_demo.py
+python examples/mcp_openai_demo.py
+python examples/mcp_gemini_demo.py
+```
+
+---
+
+## Documentation
+
+- [API Documentation (PDF)](docs/api_documentation.pdf)
+
+Full endpoint reference including parameters, request/response schemas, authentication, and error codes.
+
 ---
 
 ## Project Structure
@@ -227,7 +268,7 @@ python mcp_server.py
 ```
 .
 ├── app/
-│   ├── auth/           # JWT utilities
+│   ├── auth/           # JWT utilities (JTI, key rotation, blacklist)
 │   ├── models/         # SQLAlchemy ORM models
 │   ├── routers/        # FastAPI route handlers
 │   ├── schemas/        # Pydantic request/response schemas
@@ -235,10 +276,15 @@ python mcp_server.py
 │   ├── config.py       # Pydantic settings
 │   ├── database.py     # SQLAlchemy engine and session
 │   └── main.py         # FastAPI application entry point
-├── scripts/            # Data seeding scripts
-├── tests/              # Pytest test suite (49 tests)
+├── examples/           # Multi-client MCP demo scripts
+│   ├── mcp_claude_demo.py
+│   ├── mcp_openai_demo.py
+│   └── mcp_gemini_demo.py
+├── scripts/            # Data seeding and utility scripts
+├── tests/              # Pytest test suite (55 tests)
 ├── alembic/            # Database migrations
-├── mcp_server.py       # MCP server
+├── docs/               # API documentation PDF
+├── mcp_server.py       # MCP server (stdio + SSE transport)
 ├── Dockerfile
 ├── docker-compose.yml
 ├── requirements.txt
