@@ -5,7 +5,7 @@ from fastapi import APIRouter
 router = APIRouter(tags=["Health"])
 
 
-@router.get("/")
+@router.get("/api")
 def root() -> dict:
     """Root endpoint returning API information."""
     return {

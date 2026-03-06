@@ -11,12 +11,14 @@ router = APIRouter(prefix="/api/v1/drivers", tags=["Drivers"])
 
 
 @router.get("", response_model=list[DriverResponse])
-def list_drivers(nationality: str | None = None, db: Session = Depends(get_db)):
-    """List all drivers, optionally filtered by nationality."""
+def list_drivers(nationality: str | None = None, name: str | None = None, db: Session = Depends(get_db)):
+    """List all drivers, optionally filtered by nationality or partial name."""
     query = db.query(Driver)
     if nationality:
         query = query.filter(Driver.nationality == nationality)
-    return query.order_by(Driver.last_name).all()
+    if name:
+        query = query.filter(Driver.name.ilike(f"%{name}%"))
+    return query.order_by(Driver.last_name).limit(20).all()
 
 
 @router.get("/{driver_id}", response_model=DriverResponse)

@@ -13,7 +13,23 @@ from app.models.race_result import RaceResult
 JOLPICA_BASE = "https://api.jolpi.ca/ergast/f1"
 
 # Seed these seasons for a rich dataset covering multiple eras
-SEASONS_TO_SEED = [2020, 2021, 2022, 2023, 2024]
+SEASONS_TO_SEED = list(range(2000, 2026))
+
+
+def _get_with_retry(url: str, max_retries: int = 5) -> dict:
+    """GET with exponential backoff on 429/5xx."""
+    delay = 5
+    for attempt in range(max_retries):
+        response = httpx.get(url, timeout=60)
+        if response.status_code == 429:
+            wait = delay * (2 ** attempt)
+            print(f"  Rate limited — waiting {wait}s before retry...")
+            time.sleep(wait)
+            continue
+        response.raise_for_status()
+        return response.json()
+    response.raise_for_status()
+    return response.json()
 
 
 def fetch_season_races(season: int) -> list[dict]:
@@ -24,9 +40,7 @@ def fetch_season_races(season: int) -> list[dict]:
 
     while True:
         url = f"{JOLPICA_BASE}/{season}/results.json?limit={limit}&offset={offset}"
-        response = httpx.get(url, timeout=60)
-        response.raise_for_status()
-        data = response.json()
+        data = _get_with_retry(url)
         batch = data["MRData"]["RaceTable"]["Races"]
         if not batch:
             break
@@ -35,7 +49,7 @@ def fetch_season_races(season: int) -> list[dict]:
         offset += limit
         if offset >= total:
             break
-        time.sleep(0.5)  # respect Jolpica rate limits
+        time.sleep(1.5)  # respect Jolpica rate limits
 
     return races
 
@@ -115,7 +129,7 @@ def seed_races(db: Session) -> int:
 
         db.commit()
         print(f"  Season {season}: {len(races_data)} races processed.")
-        time.sleep(2)  # pause between seasons to avoid rate limiting
+        time.sleep(4)  # pause between seasons to avoid rate limiting
 
     print(f"\nTotal: {total_races} new races, {total_results} new results seeded.")
     return total_races

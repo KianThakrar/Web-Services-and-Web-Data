@@ -50,14 +50,15 @@ def season_summary(season: int, db: Session = Depends(get_db)):
 
 
 @router.get("/drivers/{driver1_id}/vs/{driver2_id}")
-def head_to_head(driver1_id: int, driver2_id: int, db: Session = Depends(get_db)):
+def head_to_head(driver1_id: int, driver2_id: int, year_from: int | None = None, year_to: int | None = None, db: Session = Depends(get_db)):
     """
     Head-to-head career comparison between two drivers.
 
     Returns full career stats for each driver plus direct race comparisons —
     how many times each driver finished ahead of the other in shared races.
+    Optionally restrict to a year range with year_from / year_to.
     """
-    result = get_head_to_head(db, driver1_id, driver2_id)
+    result = get_head_to_head(db, driver1_id, driver2_id, year_from, year_to)
     if result is None:
         raise HTTPException(status_code=404, detail="One or both drivers not found")
     return result

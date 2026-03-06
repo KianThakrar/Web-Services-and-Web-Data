@@ -165,9 +165,13 @@
           <div class="drop" id="pd-drop"></div>
           <input id="pd-id" type="hidden">
         </div>
-        <div class="field" style="max-width:260px">
-          <label>Circuit (optional)</label>
-          <input id="pd-circuit" type="text" placeholder="e.g. Monza, Silverstone, Spa">
+        <div class="field" style="max-width:130px">
+          <label>Season (optional)</label>
+          <select id="pd-season" onchange="loadProbRaces()"><option value="">— any —</option></select>
+        </div>
+        <div class="field" style="max-width:240px">
+          <label>Race / Circuit (optional)</label>
+          <select id="pd-race"><option value="">Overall probability</option></select>
         </div>
         <button class="btn" onclick="calcProb()">Calculate</button>
       </div>
@@ -212,13 +216,7 @@
       <div class="row">
         <div class="field" style="max-width:180px">
           <label>Season</label>
-          <select id="s-season" onchange="loadStandings()">
-            <option value="2024">2024</option>
-            <option value="2023">2023</option>
-            <option value="2022">2022</option>
-            <option value="2021">2021</option>
-            <option value="2020">2020</option>
-          </select>
+          <select id="s-season" onchange="loadStandings()"></select>
         </div>
       </div>
       <div id="s-loading" class="loading">Loading standings…</div>
@@ -245,6 +243,14 @@
           <div class="drop" id="h2-drop"></div>
           <input id="h2-id" type="hidden">
         </div>
+        <div class="field" style="max-width:120px">
+          <label>From year</label>
+          <select id="h2h-from"><option value="">All time</option></select>
+        </div>
+        <div class="field" style="max-width:120px">
+          <label>To year</label>
+          <select id="h2h-to"><option value="">All time</option></select>
+        </div>
         <button class="btn" onclick="loadH2H()">Compare</button>
       </div>
       <div id="h2h-err" class="err hidden"></div>
@@ -261,13 +267,7 @@
       <div class="row">
         <div class="field" style="max-width:150px">
           <label>Season</label>
-          <select id="ai-season" onchange="loadRaces()">
-            <option value="2024">2024</option>
-            <option value="2023">2023</option>
-            <option value="2022">2022</option>
-            <option value="2021">2021</option>
-            <option value="2020">2020</option>
-          </select>
+          <select id="ai-season" onchange="loadRaces()"></select>
         </div>
         <div class="field">
           <label>Race</label>
@@ -364,10 +364,26 @@ autocomplete('pd-input', 'pd-drop', 'pd-id');
 autocomplete('h1-input', 'h1-drop', 'h1-id');
 autocomplete('h2-input', 'h2-drop', 'h2-id');
 
-// ── Win probability ──────────────────────────────────────────────────────────
+// ── Win probability — race dropdown ──────────────────────────────────────────
+async function loadProbRaces() {
+  const season = $('pd-season').value;
+  const sel = $('pd-race');
+  sel.innerHTML = '<option value="">Overall probability</option>';
+  if (!season) return;
+  try {
+    const races = await get(`/api/v1/races?season=${season}`);
+    races.forEach(r => {
+      const opt = document.createElement('option');
+      opt.value = r.circuit_name;
+      opt.textContent = `R${r.round} — ${r.name}`;
+      sel.appendChild(opt);
+    });
+  } catch {}
+}
+
 async function calcProb() {
   const id = $('pd-id').value;
-  const circuit = $('pd-circuit').value.trim();
+  const circuit = $('pd-race').value;
   hide('pd-err'); hide('pd-result');
   if (!id) { show('pd-err'); setText('pd-err', 'Please select a driver from the dropdown.'); return; }
   show('pd-loading');
@@ -433,7 +449,11 @@ async function loadH2H() {
   if (id1 === id2)   { show('h2h-err'); setText('h2h-err', 'Please select two different drivers.'); return; }
   show('h2h-loading');
   try {
-    const data = await get(`/api/v1/analytics/drivers/${id1}/vs/${id2}`);
+    const yf = $('h2h-from').value, yt = $('h2h-to').value;
+    let qs = '';
+    if (yf) qs += `?year_from=${yf}`;
+    if (yt) qs += (qs ? '&' : '?') + `year_to=${yt}`;
+    const data = await get(`/api/v1/analytics/drivers/${id1}/vs/${id2}${qs}`);
     hide('h2h-loading');
     const d1 = data.driver_1, d2 = data.driver_2, hh = data.head_to_head;
 
@@ -536,6 +556,23 @@ async function loadWinners() {
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
+(function populateSeasons() {
+  const seasons = [];
+  for (let y = 2025; y >= 2000; y--) seasons.push(y);
+  const opts = seasons.map(y => `<option value="${y}"${y === 2024 ? ' selected' : ''}>${y}</option>`).join('');
+  $('s-season').innerHTML = opts;
+  $('ai-season').innerHTML = opts;
+
+  // Win probability season picker (no default selection)
+  $('pd-season').innerHTML = '<option value="">— any —</option>' +
+    seasons.map(y => `<option value="${y}">${y}</option>`).join('');
+
+  // H2H year range pickers
+  const allOpt = '<option value="">All time</option>';
+  const yearOpts = seasons.map(y => `<option value="${y}">${y}</option>`).join('');
+  $('h2h-from').innerHTML = allOpt + yearOpts;
+  $('h2h-to').innerHTML = allOpt + yearOpts;
+})();
 loadStandings();
 loadRaces();
 loadWinners();

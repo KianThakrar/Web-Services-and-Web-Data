@@ -136,13 +136,20 @@ def get_season_summary(db: Session, season: int) -> dict:
     }
 
 
-def _driver_career_stats(db: Session, driver_id: int) -> dict | None:
-    """Build career stats block for a single driver."""
+def _driver_career_stats(db: Session, driver_id: int, year_from: int | None = None, year_to: int | None = None) -> dict | None:
+    """Build career stats block for a single driver, optionally restricted to a year range."""
     driver = db.query(Driver).filter(Driver.id == driver_id).first()
     if not driver:
         return None
 
-    results = db.query(RaceResult).filter(RaceResult.driver_id == driver_id).all()
+    query = db.query(RaceResult).filter(RaceResult.driver_id == driver_id)
+    if year_from or year_to:
+        query = query.join(Race, Race.id == RaceResult.race_id)
+        if year_from:
+            query = query.filter(Race.season >= year_from)
+        if year_to:
+            query = query.filter(Race.season <= year_to)
+    results = query.all()
     if not results:
         return {
             "driver_id": driver_id,
@@ -170,24 +177,28 @@ def _driver_career_stats(db: Session, driver_id: int) -> dict | None:
     }
 
 
-def get_head_to_head(db: Session, driver1_id: int, driver2_id: int) -> dict | None:
+def get_head_to_head(db: Session, driver1_id: int, driver2_id: int, year_from: int | None = None, year_to: int | None = None) -> dict | None:
     """Compare two drivers head-to-head: career stats and direct race comparisons."""
-    stats1 = _driver_career_stats(db, driver1_id)
-    stats2 = _driver_career_stats(db, driver2_id)
+    stats1 = _driver_career_stats(db, driver1_id, year_from, year_to)
+    stats2 = _driver_career_stats(db, driver2_id, year_from, year_to)
     if stats1 is None or stats2 is None:
         return None
 
     # Races where both drivers competed — count who finished ahead
     d1_ahead = 0
     d2_ahead = 0
-    shared_races = (
-        db.query(RaceResult.race_id)
-        .filter(RaceResult.driver_id == driver1_id)
-        .intersect(
-            db.query(RaceResult.race_id).filter(RaceResult.driver_id == driver2_id)
-        )
-        .all()
-    )
+    q1 = db.query(RaceResult.race_id).filter(RaceResult.driver_id == driver1_id)
+    q2 = db.query(RaceResult.race_id).filter(RaceResult.driver_id == driver2_id)
+    if year_from or year_to:
+        q1 = q1.join(Race, Race.id == RaceResult.race_id)
+        q2 = q2.join(Race, Race.id == RaceResult.race_id)
+        if year_from:
+            q1 = q1.filter(Race.season >= year_from)
+            q2 = q2.filter(Race.season >= year_from)
+        if year_to:
+            q1 = q1.filter(Race.season <= year_to)
+            q2 = q2.filter(Race.season <= year_to)
+    shared_races = q1.intersect(q2).all()
     for (race_id,) in shared_races:
         r1 = db.query(RaceResult).filter(RaceResult.race_id == race_id, RaceResult.driver_id == driver1_id).first()
         r2 = db.query(RaceResult).filter(RaceResult.race_id == race_id, RaceResult.driver_id == driver2_id).first()
