@@ -31,5 +31,9 @@ httpx==0.28.1
 # Rate limiting
 slowapi==0.1.9
 
+# ML model (win probability logistic regression)
+scikit-learn==1.6.1
+numpy==2.2.3
+
 # MCP
 mcp[cli]==1.3.0
