@@ -89,7 +89,10 @@ def get_race_summary(db: Session, race_id: int) -> dict:
 
     if settings.anthropic_api_key:
         context = _build_race_context(db, race)
-        summary_text = _generate_with_claude(context)
+        try:
+            summary_text = _generate_with_claude(context)
+        except Exception:
+            summary_text = _fallback_summary(race, db)
     else:
         summary_text = _fallback_summary(race, db)
 

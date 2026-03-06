@@ -33,12 +33,12 @@ class TestFavouriteCRUD:
         assert response.status_code == 200
         assert len(response.json()) == 1
 
-    def test_add_duplicate_favourite_returns_400(self, client, db):
+    def test_add_duplicate_favourite_returns_409(self, client, db):
         driver = make_driver(db)
         headers = register_and_login(client)
         client.post("/api/v1/favourites", json={"driver_id": driver.id}, headers=headers)
         response = client.post("/api/v1/favourites", json={"driver_id": driver.id}, headers=headers)
-        assert response.status_code == 400
+        assert response.status_code == 409
 
     def test_remove_favourite_returns_204(self, client, db):
         driver = make_driver(db)

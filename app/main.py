@@ -1,6 +1,7 @@
 """FastAPI application entry point with middleware and router registration."""
 
 from fastapi import FastAPI, Request, Response
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -22,6 +23,11 @@ app = FastAPI(
 # Attach rate limiter state so slowapi middleware can resolve it
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception) -> JSONResponse:  # noqa: ARG001
+    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
 # ---------------------------------------------------------------------------
 # CORS — explicitly enumerate allowed origins; never use wildcard with credentials

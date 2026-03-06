@@ -10,9 +10,9 @@ from app.schemas.user import UserCreate
 
 def register_user(db: Session, data: UserCreate) -> User:
     if db.query(User).filter(User.username == data.username).first():
-        raise HTTPException(status_code=400, detail="Username already taken")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username already taken")
     if db.query(User).filter(User.email == data.email).first():
-        raise HTTPException(status_code=400, detail="Email already registered")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
 
     user = User(
         username=data.username,

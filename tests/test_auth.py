@@ -17,22 +17,22 @@ class TestRegistration:
         assert "id" in data
         assert "hashed_password" not in data
 
-    def test_register_duplicate_username_returns_400(self, client):
+    def test_register_duplicate_username_returns_409(self, client):
         payload = {"username": "duplicate", "email": "a@example.com", "password": "password123"}
         client.post("/api/v1/auth/register", json=payload)
         response = client.post("/api/v1/auth/register", json={
             "username": "duplicate", "email": "b@example.com", "password": "password123"
         })
-        assert response.status_code == 400
+        assert response.status_code == 409
 
-    def test_register_duplicate_email_returns_400(self, client):
+    def test_register_duplicate_email_returns_409(self, client):
         client.post("/api/v1/auth/register", json={
             "username": "user1", "email": "same@example.com", "password": "password123"
         })
         response = client.post("/api/v1/auth/register", json={
             "username": "user2", "email": "same@example.com", "password": "password123"
         })
-        assert response.status_code == 400
+        assert response.status_code == 409
 
 
 class TestLogin:
