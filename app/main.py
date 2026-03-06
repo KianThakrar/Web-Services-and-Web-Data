@@ -1,7 +1,9 @@
 """FastAPI application entry point with middleware and router registration."""
 
+import os
+
 from fastapi import FastAPI, Request, Response
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -71,3 +73,14 @@ app.include_router(predictions.router)
 app.include_router(favourites.router)
 app.include_router(analytics.router)
 app.include_router(ai.router)
+
+
+# ---------------------------------------------------------------------------
+# Frontend — serve the SPA dashboard at the root path
+# ---------------------------------------------------------------------------
+_FRONTEND = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "index.html")
+
+
+@app.get("/", include_in_schema=False)
+def serve_frontend() -> FileResponse:
+    return FileResponse(_FRONTEND)
