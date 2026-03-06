@@ -1,6 +1,6 @@
 # F1 Racing Intelligence API
 
-A data-driven REST API built with **FastAPI** and **PostgreSQL** for querying Formula 1 statistics, managing race predictions, and generating AI-powered race narratives.
+A data-driven REST API built with **FastAPI** and **PostgreSQL** for querying Formula 1 statistics, managing race predictions, and generating AI-powered race narratives. Includes an interactive frontend dashboard and an MCP server for AI client integration.
 
 Built for COMP3011 Web Services and Web Data (University of Leeds, 2025/26).
 
@@ -18,11 +18,12 @@ docker-compose up --build
 
 **What happens on first run:**
 1. PostgreSQL starts inside Docker (no local database installation needed)
-2. F1 data is automatically fetched from the Jolpica API and seeded — **this takes ~60 seconds, please wait**
-3. The API starts at **http://localhost:8000**
+2. F1 data is loaded from the bundled CSV files — **this takes ~10 seconds**
+3. The API and frontend start at **http://localhost:8000**
 
 **Once running:**
-- Interactive API docs: **http://localhost:8000/docs**
+- Interactive dashboard: **http://localhost:8000/**
+- API documentation (Swagger): **http://localhost:8000/docs**
 - Health check: **http://localhost:8000/health**
 
 > The AI race summary endpoint works without an `ANTHROPIC_API_KEY` — summaries use a deterministic fallback and are cached on first request.
@@ -43,7 +44,7 @@ Edit `docker-compose.yml`, change `"8000:8000"` to `"8001:8000"`, then visit `ht
 
 **Seeding appears to hang**
 
-The seed script fetches ~100 races across 5 seasons from an external API and prints progress as it goes. Wait up to 90 seconds. You will see `✓ Seed complete.` when it finishes, followed by `Uvicorn running on http://0.0.0.0:8000`.
+The seed script loads from `data/csv/` (bundled in the repo). It should complete in under 15 seconds. You will see `✓ CSV seed complete.` followed by `Uvicorn running on http://0.0.0.0:8000`.
 
 **"Connection refused" when visiting localhost:8000**
 
@@ -82,10 +83,12 @@ createdb f1_racing_db           # or create via pgAdmin / psql
 
 alembic upgrade head
 
-python -m scripts.seed          # ~60 seconds
+python -m scripts.seed          # loads from data/csv/ — completes in ~10s
 
 uvicorn app.main:app --reload
 ```
+
+Then open **http://127.0.0.1:8000/** for the dashboard.
 
 ---
 
@@ -104,6 +107,14 @@ All 55 tests should pass.
 
 ## API Endpoints
 
+### Utility
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/` | Interactive frontend dashboard (SPA) |
+| GET | `/api` | API info and links |
+| GET | `/health` | Health check |
+| GET | `/docs` | Swagger UI |
+
 ### Authentication
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -115,7 +126,7 @@ All 55 tests should pass.
 ### Drivers
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/v1/drivers` | List all drivers (filter: `?nationality=British`) |
+| GET | `/api/v1/drivers` | List drivers (filter: `?nationality=British&name=hamilton`) |
 | GET | `/api/v1/drivers/{id}` | Get driver by ID |
 
 ### Constructors
@@ -153,15 +164,35 @@ All 55 tests should pass.
 | GET | `/api/v1/analytics/drivers/nationalities` | Driver nationality breakdown |
 | GET | `/api/v1/analytics/drivers/top-winners` | All-time top race winners |
 | GET | `/api/v1/analytics/seasons/{season}/summary` | Season summary statistics |
-| GET | `/api/v1/analytics/drivers/{id}/vs/{id2}` | Head-to-head career comparison |
+| GET | `/api/v1/analytics/drivers/{id}/vs/{id2}?year_from=2010&year_to=2020` | Head-to-head comparison (optional year range) |
 | GET | `/api/v1/analytics/drivers/{id}/circuits/{name}` | Driver circuit performance history |
 | GET | `/api/v1/analytics/constructors/era-dominance` | Constructor dominance by decade |
-| GET | `/api/v1/analytics/drivers/{id}/win-probability` | Win probability model (weighted) |
+| GET | `/api/v1/analytics/drivers/{id}/win-probability?circuit_name=Monza` | Win probability model (optional circuit) |
 
 ### AI
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/v1/ai/races/{id}/summary` | AI-generated race narrative (cache-first) |
+
+---
+
+## HTTP Status Codes
+
+The API uses semantically correct status codes throughout:
+
+| Code | Meaning | When used |
+|------|---------|-----------|
+| 200 | OK | Successful GET/PUT |
+| 201 | Created | Successful POST (resource created) |
+| 204 | No Content | Successful DELETE |
+| 400 | Bad Request | Validation errors |
+| 401 | Unauthorised | Missing or invalid JWT |
+| 403 | Forbidden | Authenticated but not owner of resource |
+| 404 | Not Found | Resource does not exist |
+| 409 | Conflict | Duplicate username, email, or favourite |
+| 422 | Unprocessable | Pydantic schema validation failure |
+| 429 | Too Many Requests | Rate limit exceeded on auth endpoints |
+| 500 | Internal Server Error | Unhandled exceptions (global handler) |
 
 ---
 
@@ -186,6 +217,43 @@ This ensures **full reproducibility** for examiners cloning without an API key.
 - Security response headers (X-Content-Type-Options, X-Frame-Options, Referrer-Policy)
 - Input validation: username 3–50 chars alphanumeric, password 8–72 chars
 - Configurable CORS origins (no wildcard)
+- Global exception handler prevents stack traces leaking to clients
+
+---
+
+## Frontend Dashboard
+
+Visiting **http://localhost:8000/** serves an interactive single-page dashboard with five tabs:
+
+| Tab | What it shows |
+|-----|--------------|
+| **Win Probability** | Select driver + season + race → animated probability breakdown across 4 factors |
+| **Standings** | Championship standings table for any season 2000–2025 |
+| **Head-to-Head** | Two-driver comparison with optional year-range filter |
+| **AI Summaries** | Claude-generated race narratives with Cached / Live AI badge |
+| **Top Winners** | All-time race winners leaderboard |
+
+No build step — vanilla JS, single HTML file, served directly by FastAPI.
+
+---
+
+## Data
+
+Race data covers **seasons 2000–2025** sourced from the [Jolpica F1 API](https://api.jolpi.ca/ergast/f1/) (Ergast-compatible):
+
+| Table | Rows |
+|-------|------|
+| Drivers | 874 |
+| Constructors | 214 |
+| Races | 503 |
+| Race Results | 10,550 |
+
+Data is bundled as CSV files in `data/csv/` so the database can be seeded instantly without any external API access. To refresh or extend the data:
+
+```bash
+python -m scripts.seed --api      # re-fetch from Jolpica API
+python -m scripts.export_csv      # export updated DB back to CSV
+```
 
 ---
 
@@ -276,11 +344,21 @@ Full endpoint reference including parameters, request/response schemas, authenti
 │   ├── config.py       # Pydantic settings
 │   ├── database.py     # SQLAlchemy engine and session
 │   └── main.py         # FastAPI application entry point
+├── data/
+│   └── csv/            # Bundled CSV snapshots (874 drivers, 503 races, 10,550 results)
 ├── examples/           # Multi-client MCP demo scripts
 │   ├── mcp_claude_demo.py
 │   ├── mcp_openai_demo.py
 │   └── mcp_gemini_demo.py
+├── frontend/
+│   └── index.html      # Single-page dashboard (served at GET /)
 ├── scripts/            # Data seeding and utility scripts
+│   ├── seed.py         # Master entry point (auto-detects CSV vs API)
+│   ├── seed_from_csv.py# Fast CSV-based seed (no API calls)
+│   ├── export_csv.py   # Export DB to CSV snapshots
+│   ├── seed_drivers.py # Fetch drivers from Jolpica API
+│   ├── seed_constructors.py
+│   └── seed_races.py   # Fetch races 2000–2025 from Jolpica API
 ├── tests/              # Pytest test suite (55 tests)
 ├── alembic/            # Database migrations
 ├── docs/               # API documentation PDF
@@ -290,9 +368,3 @@ Full endpoint reference including parameters, request/response schemas, authenti
 ├── requirements.txt
 └── .env.example
 ```
-
----
-
-## Data Source
-
-Race data is sourced from the [Jolpica F1 API](https://api.jolpi.ca/ergast/f1/) (Ergast-compatible), a free and publicly available Formula 1 dataset covering all seasons from 1950 to present. Seasons 2020–2024 are seeded (~100 races, ~2000 results).
