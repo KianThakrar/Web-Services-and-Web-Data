@@ -1,5 +1,7 @@
 """TDD tests for weather analytics endpoints."""
 
+from datetime import date
+
 from app.models.constructor import Constructor
 from app.models.driver import Driver
 from app.models.race import Race
@@ -14,10 +16,10 @@ def seed_weather_data(db):
     c1 = Constructor(constructor_ref="mercedes", name="Mercedes", nationality="German")
 
     # Two races at same circuit — one wet, one dry
-    r1 = Race(season=2020, round=1, name="British GP", circuit_name="Silverstone Circuit", circuit_location="Silverstone", circuit_country="UK", date="2020-08-02")
-    r2 = Race(season=2021, round=10, name="British GP", circuit_name="Silverstone Circuit", circuit_location="Silverstone", circuit_country="UK", date="2021-07-18")
+    r1 = Race(season=2020, round=1, name="British GP", circuit_name="Silverstone Circuit", circuit_location="Silverstone", circuit_country="UK", date=date(2020, 8, 2))
+    r2 = Race(season=2021, round=10, name="British GP", circuit_name="Silverstone Circuit", circuit_location="Silverstone", circuit_country="UK", date=date(2021, 7, 18))
     # One race at a different circuit (dry)
-    r3 = Race(season=2021, round=1, name="Bahrain GP", circuit_name="Bahrain International Circuit", circuit_location="Sakhir", circuit_country="Bahrain", date="2021-03-28")
+    r3 = Race(season=2021, round=1, name="Bahrain GP", circuit_name="Bahrain International Circuit", circuit_location="Sakhir", circuit_country="Bahrain", date=date(2021, 3, 28))
 
     db.add_all([d1, d2, c1, r1, r2, r3])
     db.flush()

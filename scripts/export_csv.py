@@ -39,7 +39,8 @@ def run() -> None:
             {
                 "id": d.id, "driver_ref": d.driver_ref, "name": d.name,
                 "first_name": d.first_name, "last_name": d.last_name,
-                "date_of_birth": d.date_of_birth, "nationality": d.nationality,
+                "date_of_birth": d.date_of_birth.isoformat() if d.date_of_birth else None,
+                "nationality": d.nationality,
                 "number": d.number, "code": d.code, "url": d.url,
             }
             for d in db.query(Driver).order_by(Driver.id).all()
@@ -59,7 +60,9 @@ def run() -> None:
             {
                 "id": r.id, "season": r.season, "round": r.round, "name": r.name,
                 "circuit_name": r.circuit_name, "circuit_location": r.circuit_location,
-                "circuit_country": r.circuit_country, "date": r.date, "url": r.url,
+                "circuit_country": r.circuit_country,
+                "date": r.date.isoformat() if r.date else None,
+                "url": r.url,
             }
             for r in db.query(Race).order_by(Race.season, Race.round).all()
         ])

@@ -1,11 +1,22 @@
 """Seed drivers from Jolpica F1 API (Ergast-compatible)."""
 
+from datetime import date
+
 import httpx
 from sqlalchemy.orm import Session
 
 from app.models.driver import Driver
 
 JOLPICA_BASE = "https://api.jolpi.ca/ergast/f1"
+
+
+def _parse_date(raw: str | None) -> date | None:
+    if not raw:
+        return None
+    try:
+        return date.fromisoformat(raw)
+    except ValueError:
+        return None
 
 
 def fetch_all_drivers() -> list[dict]:
@@ -51,7 +62,7 @@ def seed_drivers(db: Session) -> int:
             name=f"{d['givenName']} {d['familyName']}",
             first_name=d["givenName"],
             last_name=d["familyName"],
-            date_of_birth=d.get("dateOfBirth"),
+            date_of_birth=_parse_date(d.get("dateOfBirth")),
             nationality=d.get("nationality", "Unknown"),
             number=int(d["permanentNumber"]) if d.get("permanentNumber") else None,
             code=d.get("code"),

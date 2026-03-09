@@ -11,6 +11,7 @@ Usage:
 import csv
 import os
 import sys
+from datetime import date
 
 from app.database import Base, SessionLocal, engine
 from app.models.constructor import Constructor
@@ -51,6 +52,15 @@ def _str(val: str) -> str | None:
     return val if val not in ("", "None", None) else None
 
 
+def _date(val: str) -> date | None:
+    if val in ("", "None", None):
+        return None
+    try:
+        return date.fromisoformat(val)
+    except ValueError:
+        return None
+
+
 def run() -> None:
     print("=== F1 Racing Intelligence API — CSV Seed ===")
     Base.metadata.create_all(bind=engine)
@@ -69,7 +79,7 @@ def run() -> None:
                 name=r["name"],
                 first_name=_str(r["first_name"]),
                 last_name=_str(r["last_name"]),
-                date_of_birth=_str(r["date_of_birth"]),
+                date_of_birth=_date(r["date_of_birth"]),
                 nationality=_str(r["nationality"]),
                 number=_int(r["number"]),
                 code=_str(r["code"]),
@@ -112,7 +122,7 @@ def run() -> None:
                 circuit_name=_str(r["circuit_name"]),
                 circuit_location=_str(r["circuit_location"]),
                 circuit_country=_str(r["circuit_country"]),
-                date=_str(r["date"]),
+                date=_date(r["date"]),
                 url=_str(r["url"]),
             ))
             inserted += 1

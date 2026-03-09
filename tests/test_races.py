@@ -1,5 +1,7 @@
 """TDD tests for race read endpoints."""
 
+from datetime import date
+
 from app.models.race import Race
 
 
@@ -10,7 +12,7 @@ def make_race(db, season=2024, round_num=1, name="Bahrain Grand Prix"):
         name=name,
         circuit_name="Bahrain International Circuit",
         circuit_country="Bahrain",
-        date="2024-03-02",
+        date=date(2024, 3, 2),
     )
     db.add(r)
     db.commit()
