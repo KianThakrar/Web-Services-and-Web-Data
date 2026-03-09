@@ -53,6 +53,10 @@ CURL_EXAMPLES = {
     "/api/v1/analytics/weather/circuits/{circuit_name}": 'curl "http://localhost:8000/api/v1/analytics/weather/circuits/Silverstone%20Circuit"',
     "/api/v1/analytics/weather/drivers/{driver_id}": 'curl "http://localhost:8000/api/v1/analytics/weather/drivers/332"',
     "/api/v1/analytics/weather/races/{race_id}": 'curl "http://localhost:8000/api/v1/analytics/weather/races/84"',
+    "/api/v1/analytics/races/{race_id}/win-probabilities": 'curl "http://localhost:8000/api/v1/analytics/races/456/win-probabilities"',
+    "/api/v1/analytics/drivers/{driver1_id}/vs/{driver2_id}": 'curl "http://localhost:8000/api/v1/analytics/drivers/332/vs/695?year_from=2020&year_to=2024"',
+    "/api/v1/analytics/drivers/{driver_id}/win-probability": 'curl "http://localhost:8000/api/v1/analytics/drivers/332/win-probability?circuit_name=Silverstone%20Circuit"',
+    "/api/v1/analytics/drivers/{driver_id}/circuits/{circuit_name}": 'curl "http://localhost:8000/api/v1/analytics/drivers/332/circuits/Silverstone%20Circuit"',
     "/api/v1/ai/races/{race_id}/summary": 'curl "http://localhost:8000/api/v1/ai/races/84/summary"',
 }
 
@@ -76,6 +80,26 @@ EXAMPLE_RESPONSES = {
         "circuit_name": "Silverstone Circuit", "total_races_with_data": 27,
         "avg_temperature_max": 20.5, "wet_race_percentage": 63.0,
         "wet_races": 17, "dry_races": 10
+    }, indent=2),
+    "/api/v1/analytics/races/{race_id}/win-probabilities": json.dumps([
+        {"driver_id": 695, "driver_name": "Max Verstappen", "win_probability": 0.155,
+         "circuit_name": "Bahrain International Circuit", "model": "logistic_regression",
+         "factors": {"circuit_win_rate": 0.22, "overall_win_rate": 0.42,
+                     "recent_form_rate": 0.68, "constructor_win_rate": 0.35}},
+        {"driver_id": 857, "driver_name": "Lando Norris", "win_probability": 0.118,
+         "circuit_name": "Bahrain International Circuit", "model": "logistic_regression",
+         "factors": {"circuit_win_rate": 0.08, "overall_win_rate": 0.11,
+                     "recent_form_rate": 0.55, "constructor_win_rate": 0.22}}
+    ], indent=2),
+    "/api/v1/analytics/drivers/{driver_id}/win-probability": json.dumps({
+        "driver_id": 332, "driver_name": "Lewis Hamilton",
+        "circuit_name": "Silverstone Circuit", "win_probability": 0.507,
+        "model": "logistic_regression",
+        "factors": {"circuit_win_rate": 0.48, "circuit_appearances": 20,
+                    "circuit_wins": 9, "overall_win_rate": 0.34,
+                    "total_races": 349, "total_wins": 103,
+                    "recent_form_rate": 0.32, "constructor_win_rate": 0.18},
+        "model_info": {"training_samples": 9926, "accuracy": 0.832}
     }, indent=2),
 }
 
@@ -481,7 +505,7 @@ html = f"""<!DOCTYPE html>
   <div class="cover-meta">
     <div class="cover-stat"><div class="val">{total_endpoints}</div><div class="lbl">Endpoints</div></div>
     <div class="cover-stat"><div class="val">13</div><div class="lbl">MCP Tools</div></div>
-    <div class="cover-stat"><div class="val">60</div><div class="lbl">Tests</div></div>
+    <div class="cover-stat"><div class="val">69</div><div class="lbl">Tests</div></div>
     <div class="cover-stat"><div class="val">12,641</div><div class="lbl">Data Rows</div></div>
     <div class="cover-stat"><div class="val">2</div><div class="lbl">External APIs</div></div>
   </div>
