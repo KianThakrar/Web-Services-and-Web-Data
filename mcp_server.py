@@ -28,6 +28,11 @@ from app.services.analytics_service import (
     get_win_probability,
 )
 from app.services.ai_service import get_race_summary
+from app.services.weather_service import (
+    get_circuit_weather_profile,
+    get_driver_weather_performance,
+    get_race_weather_impact,
+)
 
 mcp = FastMCP("F1 Racing Intelligence API")
 
@@ -209,9 +214,10 @@ def get_all_time_top_winners(limit: int = 10) -> list[dict]:
 def get_driver_win_probability(driver_id: int, circuit_name: str = "") -> dict:
     """Estimate a driver's probability of winning at a given circuit.
 
-    Combines circuit win rate (40%), overall career win rate (30%),
-    recent form over last 10 races (20%), and constructor strength (10%)
-    into a probability score between 0 and 1.
+    Uses the same logistic regression model as the REST API endpoint, with
+    walk-forward feature construction and no look-ahead bias. The prediction
+    is driven by decayed career win rate, circuit form, recent points form,
+    and constructor form.
 
     Args:
         driver_id: The numeric ID of the driver.
@@ -223,6 +229,69 @@ def get_driver_win_probability(driver_id: int, circuit_name: str = "") -> dict:
         result = get_win_probability(db, driver_id, circuit_name or None)
         if result is None:
             return {"error": f"Driver {driver_id} not found"}
+        return result
+    finally:
+        db.close()
+
+
+# ── Weather tools ─────────────────────────────────────────────────────────────
+
+@mcp.tool()
+def get_circuit_weather(circuit_name: str) -> dict:
+    """Get the historical weather profile for an F1 circuit.
+
+    Returns average temperature, rain frequency, and common conditions
+    across all races at this circuit's location.
+
+    Args:
+        circuit_name: The circuit name (e.g. 'Silverstone Circuit', 'Circuit de Spa-Francorchamps').
+    """
+    db = SessionLocal()
+    try:
+        result = get_circuit_weather_profile(db, circuit_name)
+        if result is None:
+            return {"error": f"No weather data for circuit '{circuit_name}'"}
+        return result
+    finally:
+        db.close()
+
+
+@mcp.tool()
+def get_driver_wet_vs_dry(driver_id: int) -> dict:
+    """Compare a driver's performance in wet vs dry weather conditions.
+
+    Splits the driver's race history into wet and dry races based on
+    WMO weather codes and precipitation data, then compares win rate,
+    podium rate, average finishing position, and points per race.
+
+    Args:
+        driver_id: The numeric ID of the driver.
+    """
+    db = SessionLocal()
+    try:
+        result = get_driver_weather_performance(db, driver_id)
+        if result is None:
+            return {"error": f"Driver {driver_id} not found"}
+        return result
+    finally:
+        db.close()
+
+
+@mcp.tool()
+def get_race_weather(race_id: int) -> dict:
+    """Get weather conditions and results for a specific race.
+
+    Returns temperature, precipitation, wind speed, and condition
+    classification alongside the complete race finishing order.
+
+    Args:
+        race_id: The numeric ID of the race.
+    """
+    db = SessionLocal()
+    try:
+        result = get_race_weather_impact(db, race_id)
+        if result is None:
+            return {"error": f"Race {race_id} not found"}
         return result
     finally:
         db.close()

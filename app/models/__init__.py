@@ -9,6 +9,7 @@ from app.models.prediction import Prediction
 from app.models.favourite import Favourite
 from app.models.ai_summary import AISummaryCache
 from app.models.token_blacklist import TokenBlacklist
+from app.models.weather_cache import WeatherCache
 
 __all__ = [
     "User",
@@ -20,4 +21,5 @@ __all__ = [
     "Favourite",
     "AISummaryCache",
     "TokenBlacklist",
+    "WeatherCache",
 ]

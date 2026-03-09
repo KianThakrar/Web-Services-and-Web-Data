@@ -107,3 +107,10 @@ class TestLogout:
         client.post("/api/v1/auth/logout", headers={"Authorization": f"Bearer {token}"})
         response = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
         assert response.status_code == 401
+
+    def test_logout_twice_is_idempotent(self, client):
+        token = self._register_and_login(client)
+        first = client.post("/api/v1/auth/logout", headers={"Authorization": f"Bearer {token}"})
+        second = client.post("/api/v1/auth/logout", headers={"Authorization": f"Bearer {token}"})
+        assert first.status_code == 200
+        assert second.status_code == 200

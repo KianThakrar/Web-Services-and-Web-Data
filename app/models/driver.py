@@ -1,5 +1,7 @@
 """Driver model representing Formula 1 drivers."""
 
+from datetime import date
+
 from sqlalchemy import Integer, String, Date
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -16,7 +18,7 @@ class Driver(Base):
     name: Mapped[str] = mapped_column(String(200), nullable=False, index=True)
     first_name: Mapped[str] = mapped_column(String(100), nullable=False)
     last_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    date_of_birth: Mapped[str] = mapped_column(String(20), nullable=True)
+    date_of_birth: Mapped[date] = mapped_column(Date, nullable=True)
     nationality: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     number: Mapped[int] = mapped_column(Integer, nullable=True)
     code: Mapped[str] = mapped_column(String(10), nullable=True)

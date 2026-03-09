@@ -1,5 +1,7 @@
 """Pydantic schemas for driver read responses."""
 
+from datetime import date
+
 from pydantic import BaseModel
 
 
@@ -9,7 +11,7 @@ class DriverResponse(BaseModel):
     name: str
     first_name: str
     last_name: str
-    date_of_birth: str | None
+    date_of_birth: date | None
     nationality: str
     number: int | None
     code: str | None

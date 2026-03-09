@@ -1,6 +1,6 @@
 """Driver read endpoints — list with filtering and individual lookup."""
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -11,14 +11,20 @@ router = APIRouter(prefix="/api/v1/drivers", tags=["Drivers"])
 
 
 @router.get("", response_model=list[DriverResponse])
-def list_drivers(nationality: str | None = None, name: str | None = None, db: Session = Depends(get_db)):
+def list_drivers(
+    nationality: str | None = None,
+    name: str | None = None,
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    db: Session = Depends(get_db),
+):
     """List all drivers, optionally filtered by nationality or partial name."""
     query = db.query(Driver)
     if nationality:
         query = query.filter(Driver.nationality == nationality)
     if name:
         query = query.filter(Driver.name.ilike(f"%{name}%"))
-    return query.order_by(Driver.last_name).limit(20).all()
+    return query.order_by(Driver.last_name).offset(offset).limit(limit).all()
 
 
 @router.get("/{driver_id}", response_model=DriverResponse)

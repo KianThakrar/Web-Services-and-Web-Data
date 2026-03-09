@@ -1,6 +1,7 @@
 """Seed races and race results from Jolpica F1 API for key seasons."""
 
 import time
+from datetime import date
 
 import httpx
 from sqlalchemy.orm import Session
@@ -14,6 +15,15 @@ JOLPICA_BASE = "https://api.jolpi.ca/ergast/f1"
 
 # Seed these seasons for a rich dataset covering multiple eras
 SEASONS_TO_SEED = list(range(2000, 2026))
+
+
+def _parse_date(raw: str | None) -> date | None:
+    if not raw:
+        return None
+    try:
+        return date.fromisoformat(raw)
+    except ValueError:
+        return None
 
 
 def _get_with_retry(url: str, max_retries: int = 5) -> dict:
@@ -78,7 +88,7 @@ def seed_races(db: Session) -> int:
                     circuit_name=circuit["circuitName"],
                     circuit_location=circuit["Location"]["locality"],
                     circuit_country=circuit["Location"]["country"],
-                    date=race_data.get("date"),
+                    date=_parse_date(race_data.get("date")),
                     url=race_data.get("url"),
                 )
                 db.add(race)

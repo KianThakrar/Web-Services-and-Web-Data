@@ -38,6 +38,11 @@ def _decode_with_key_rotation(token: str) -> dict:
     raise last_err  # type: ignore[misc]
 
 
+def decode_access_token(token: str) -> dict:
+    """Decode a JWT using active key-rotation settings."""
+    return _decode_with_key_rotation(token)
+
+
 def create_access_token(data: dict) -> str:
     payload = data.copy()
     expire = datetime.now(UTC) + timedelta(minutes=settings.access_token_expire_minutes)
@@ -55,7 +60,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = _decode_with_key_rotation(token)
+        payload = decode_access_token(token)
         username: str = payload.get("sub")
         if username is None:
             raise credentials_exception

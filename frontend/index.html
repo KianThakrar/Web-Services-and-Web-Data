@@ -1,27 +1,39 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>F1 Intelligence API</title>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
     :root {
-      --red:    #e10600;
-      --dark:   #0d0d0d;
-      --card:   #161616;
-      --card2:  #1f1f1f;
+      --red: #e10600;
+      --dark: #0d0d0d;
+      --card: #161616;
+      --card2: #1f1f1f;
       --border: #2a2a2a;
-      --text:   #f0f0f0;
-      --muted:  #777;
-      --green:  #00d2be;
-      --gold:   #FFD700;
+      --text: #f0f0f0;
+      --muted: #777;
+      --green: #00d2be;
+      --gold: #FFD700;
       --silver: #C0C0C0;
       --bronze: #CD7F32;
     }
 
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--dark); color: var(--text); min-height: 100vh; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--dark);
+      color: var(--text);
+      min-height: 100vh;
+    }
 
     /* ── Header ─────────────────────────────────────────────────────────────── */
     header {
@@ -32,446 +44,949 @@
       align-items: center;
       gap: 16px;
     }
-    .logo { font-size: 22px; font-weight: 900; letter-spacing: -1px; color: var(--red); }
-    .logo span { color: var(--text); }
-    .logo-sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
+
+    .logo {
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: -1px;
+      color: var(--red);
+    }
+
+    .logo span {
+      color: var(--text);
+    }
+
+    .logo-sub {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 2px;
+    }
 
     /* ── Tabs ───────────────────────────────────────────────────────────────── */
-    .tabs { background: #0a0a0a; display: flex; padding: 0 28px; border-bottom: 1px solid var(--border); gap: 2px; overflow-x: auto; }
-    .tab { background: none; border: none; border-bottom: 3px solid transparent; color: var(--muted); cursor: pointer; font-size: 13px; font-weight: 600; letter-spacing: 0.3px; margin-bottom: -1px; padding: 13px 18px; transition: color .15s; white-space: nowrap; }
-    .tab:hover { color: var(--text); }
-    .tab.active { border-bottom-color: var(--red); color: var(--red); }
+    .tabs {
+      background: #0a0a0a;
+      display: flex;
+      padding: 0 28px;
+      border-bottom: 1px solid var(--border);
+      gap: 2px;
+      overflow-x: auto;
+    }
+
+    .tab {
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      margin-bottom: -1px;
+      padding: 13px 18px;
+      transition: color .15s;
+      white-space: nowrap;
+    }
+
+    .tab:hover {
+      color: var(--text);
+    }
+
+    .tab.active {
+      border-bottom-color: var(--red);
+      color: var(--red);
+    }
 
     /* ── Layout ─────────────────────────────────────────────────────────────── */
-    main { max-width: 1080px; margin: 0 auto; padding: 28px 24px; }
-    .panel { display: none; }
-    .panel.active { display: block; }
+    main {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 28px 24px;
+    }
+
+    .panel {
+      display: none;
+    }
+
+    .panel.active {
+      display: block;
+    }
 
     /* ── Card ───────────────────────────────────────────────────────────────── */
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 22px 24px; margin-bottom: 18px; }
-    .card-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
-    .card-sub { color: var(--muted); font-size: 13px; margin-bottom: 18px; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 22px 24px;
+      margin-bottom: 18px;
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .card-sub {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 18px;
+    }
 
     /* ── Form controls ──────────────────────────────────────────────────────── */
-    .row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; align-items: flex-end; }
-    .field { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 180px; position: relative; }
-    label { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 0.6px; text-transform: uppercase; }
-    input, select {
-      background: var(--card2); border: 1px solid var(--border); border-radius: 6px;
-      color: var(--text); font-size: 14px; outline: none; padding: 9px 12px;
-      transition: border-color .2s; width: 100%;
+    .row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+      align-items: flex-end;
     }
-    input:focus, select:focus { border-color: var(--red); }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      flex: 1;
+      min-width: 180px;
+      position: relative;
+    }
+
+    label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+    }
+
+    input,
+    select {
+      background: var(--card2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+      padding: 9px 12px;
+      transition: border-color .2s;
+      width: 100%;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: var(--red);
+    }
 
     /* ── Dropdown autocomplete ──────────────────────────────────────────────── */
-    .drop { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--card2); border: 1px solid var(--border); border-radius: 6px; display: none; max-height: 210px; overflow-y: auto; z-index: 200; }
-    .drop.open { display: block; }
-    .drop-item { border-bottom: 1px solid var(--border); cursor: pointer; font-size: 13px; padding: 9px 12px; }
-    .drop-item:last-child { border-bottom: none; }
-    .drop-item:hover { background: var(--border); }
-    .drop-item small { color: var(--muted); }
+    .drop {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      background: var(--card2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      display: none;
+      max-height: 210px;
+      overflow-y: auto;
+      z-index: 200;
+    }
+
+    .drop.open {
+      display: block;
+    }
+
+    .drop-item {
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      font-size: 13px;
+      padding: 9px 12px;
+    }
+
+    .drop-item:last-child {
+      border-bottom: none;
+    }
+
+    .drop-item:hover {
+      background: var(--border);
+    }
+
+    .drop-item small {
+      color: var(--muted);
+    }
 
     /* ── Button ─────────────────────────────────────────────────────────────── */
-    .btn { background: var(--red); border: none; border-radius: 6px; color: #fff; cursor: pointer; font-size: 13px; font-weight: 700; padding: 9px 22px; transition: opacity .15s; white-space: nowrap; }
-    .btn:hover { opacity: .85; }
-    .btn:disabled { opacity: .35; cursor: not-allowed; }
+    .btn {
+      background: var(--red);
+      border: none;
+      border-radius: 6px;
+      color: #fff;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 9px 22px;
+      transition: opacity .15s;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      opacity: .85;
+    }
+
+    .btn:disabled {
+      opacity: .35;
+      cursor: not-allowed;
+    }
 
     /* ── Table ──────────────────────────────────────────────────────────────── */
-    table { border-collapse: collapse; font-size: 13px; width: 100%; }
-    th { border-bottom: 1px solid var(--border); color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: 0.5px; padding: 9px 12px; text-align: left; text-transform: uppercase; }
-    td { border-bottom: 1px solid #1c1c1c; padding: 11px 12px; }
-    tr:last-child td { border-bottom: none; }
-    tr:hover td { background: rgba(255,255,255,.02); }
+    table {
+      border-collapse: collapse;
+      font-size: 13px;
+      width: 100%;
+    }
+
+    th {
+      border-bottom: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      padding: 9px 12px;
+      text-align: left;
+      text-transform: uppercase;
+    }
+
+    td {
+      border-bottom: 1px solid #1c1c1c;
+      padding: 11px 12px;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, .02);
+    }
 
     /* ── Position badge ─────────────────────────────────────────────────────── */
-    .pos { align-items: center; border-radius: 50%; display: inline-flex; font-size: 11px; font-weight: 700; height: 26px; justify-content: center; width: 26px; }
-    .p1 { background: var(--gold); color: #000; }
-    .p2 { background: var(--silver); color: #000; }
-    .p3 { background: var(--bronze); color: #fff; }
-    .pn { background: var(--border); color: var(--text); }
+    .pos {
+      align-items: center;
+      border-radius: 50%;
+      display: inline-flex;
+      font-size: 11px;
+      font-weight: 700;
+      height: 26px;
+      justify-content: center;
+      width: 26px;
+    }
+
+    .p1 {
+      background: var(--gold);
+      color: #000;
+    }
+
+    .p2 {
+      background: var(--silver);
+      color: #000;
+    }
+
+    .p3 {
+      background: var(--bronze);
+      color: #fff;
+    }
+
+    .pn {
+      background: var(--border);
+      color: var(--text);
+    }
 
     /* ── Win probability ────────────────────────────────────────────────────── */
-    .prob-layout { display: grid; gap: 20px; grid-template-columns: 180px 1fr; }
-    .prob-circle { background: var(--card2); border-radius: 8px; padding: 20px 16px; text-align: center; }
-    .prob-pct { color: var(--red); font-size: 48px; font-weight: 900; line-height: 1; }
-    .prob-label { color: var(--muted); font-size: 11px; margin-top: 5px; }
-    .prob-name { color: var(--text); font-size: 13px; font-weight: 600; margin-top: 12px; }
-    .prob-circuit { color: var(--muted); font-size: 11px; margin-top: 3px; }
+    .prob-layout {
+      display: grid;
+      gap: 20px;
+      grid-template-columns: 180px 1fr;
+    }
 
-    .factor { margin-bottom: 13px; }
-    .factor-header { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; }
-    .factor-val { color: var(--green); font-weight: 700; }
-    .bar-bg { background: var(--border); border-radius: 4px; height: 7px; }
-    .bar-fg { background: var(--red); border-radius: 4px; height: 7px; transition: width .7s ease; width: 0%; }
-    .factor-meta { color: var(--muted); font-size: 11px; margin-top: 10px; }
+    .prob-circle {
+      background: var(--card2);
+      border-radius: 8px;
+      padding: 20px 16px;
+      text-align: center;
+    }
+
+    .prob-pct {
+      color: var(--red);
+      font-size: 48px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .prob-label {
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 5px;
+    }
+
+    .prob-name {
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: 12px;
+    }
+
+    .prob-circuit {
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 3px;
+    }
+
+    .factor {
+      margin-bottom: 13px;
+    }
+
+    .factor-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      margin-bottom: 5px;
+    }
+
+    .factor-val {
+      color: var(--green);
+      font-weight: 700;
+    }
+
+    .bar-bg {
+      background: var(--border);
+      border-radius: 4px;
+      height: 7px;
+    }
+
+    .bar-fg {
+      background: var(--red);
+      border-radius: 4px;
+      height: 7px;
+      transition: width .7s ease;
+      width: 0%;
+    }
+
+    .factor-meta {
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 10px;
+    }
 
     /* ── Head-to-head ───────────────────────────────────────────────────────── */
-    .h2h-top { display: grid; gap: 16px; grid-template-columns: 1fr auto 1fr; align-items: center; margin-bottom: 20px; text-align: center; }
-    .h2h-num { color: var(--red); font-size: 44px; font-weight: 900; line-height: 1; }
-    .h2h-lbl { color: var(--muted); font-size: 11px; margin-top: 3px; }
-    .vs { color: var(--border); font-size: 20px; font-weight: 900; }
-    .stat-row { align-items: center; border-bottom: 1px solid #1c1c1c; display: flex; font-size: 13px; justify-content: space-between; padding: 9px 0; }
-    .stat-row:last-child { border-bottom: none; }
-    .stat-key { color: var(--muted); font-size: 11px; letter-spacing: 0.4px; text-transform: uppercase; }
-    .stat-v { font-weight: 600; }
-    .h2h-winner { color: var(--green); }
+    .h2h-top {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .h2h-num {
+      color: var(--red);
+      font-size: 44px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .h2h-lbl {
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 3px;
+    }
+
+    .vs {
+      color: var(--border);
+      font-size: 20px;
+      font-weight: 900;
+    }
+
+    .stat-row {
+      align-items: center;
+      border-bottom: 1px solid #1c1c1c;
+      display: flex;
+      font-size: 13px;
+      justify-content: space-between;
+      padding: 9px 0;
+    }
+
+    .stat-row:last-child {
+      border-bottom: none;
+    }
+
+    .stat-key {
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+    }
+
+    .stat-v {
+      font-weight: 600;
+    }
+
+    .h2h-winner {
+      color: var(--green);
+    }
 
     /* ── AI summary ─────────────────────────────────────────────────────────── */
-    .summary { font-size: 15px; font-style: italic; line-height: 1.75; }
-    .badge { border-radius: 4px; display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; padding: 2px 8px; text-transform: uppercase; }
-    .cached { background: #0d2b0d; color: #3ddc84; }
-    .live   { background: #2b0d0d; color: var(--red); }
+    .summary {
+      font-size: 15px;
+      font-style: italic;
+      line-height: 1.75;
+    }
+
+    .badge {
+      border-radius: 4px;
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      padding: 2px 8px;
+      text-transform: uppercase;
+    }
+
+    .cached {
+      background: #0d2b0d;
+      color: #3ddc84;
+    }
+
+    .live {
+      background: #2b0d0d;
+      color: var(--red);
+    }
 
     /* ── Feedback ───────────────────────────────────────────────────────────── */
-    .loading { color: var(--muted); font-size: 13px; padding: 16px 0; }
-    .err { background: rgba(225,6,0,.1); border-radius: 6px; color: var(--red); font-size: 13px; padding: 10px 14px; }
-    .hidden { display: none !important; }
+    .loading {
+      color: var(--muted);
+      font-size: 13px;
+      padding: 16px 0;
+    }
+
+    .err {
+      background: rgba(225, 6, 0, .1);
+      border-radius: 6px;
+      color: var(--red);
+      font-size: 13px;
+      padding: 10px 14px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* ── Weather ────────────────────────────────────────────────────────── */
+    .wx-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      margin-bottom: 18px;
+    }
+
+    .wx-stat {
+      background: var(--card2);
+      border-radius: 8px;
+      padding: 14px 16px;
+      text-align: center;
+    }
+
+    .wx-val {
+      font-size: 28px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .wx-lbl {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      margin-top: 6px;
+      text-transform: uppercase;
+    }
+
+    .wx-wet {
+      color: #4fc3f7;
+    }
+
+    .wx-dry {
+      color: #ffb74d;
+    }
+
+    .wx-verdict {
+      background: var(--card2);
+      border-left: 3px solid var(--green);
+      border-radius: 0 8px 8px 0;
+      color: var(--text);
+      font-size: 14px;
+      font-style: italic;
+      margin-top: 14px;
+      padding: 14px 18px;
+    }
+
+    .wx-bar-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+
+    .wx-bar-label {
+      min-width: 100px;
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .wx-bar-pair {
+      display: flex;
+      gap: 4px;
+      flex: 1;
+      height: 22px;
+    }
+
+    .wx-bar-wet {
+      background: #4fc3f7;
+      border-radius: 4px 0 0 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: #000;
+      min-width: 28px;
+      transition: width .6s ease;
+    }
+
+    .wx-bar-dry {
+      background: #ffb74d;
+      border-radius: 0 4px 4px 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: #000;
+      min-width: 28px;
+      transition: width .6s ease;
+    }
+
+    .wx-condition {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--card2);
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 5px 14px;
+    }
+
+    .wx-dot {
+      border-radius: 50%;
+      display: inline-block;
+      height: 8px;
+      width: 8px;
+    }
+
+    .wx-dot.wet {
+      background: #4fc3f7;
+    }
+
+    .wx-dot.dry {
+      background: #ffb74d;
+    }
 
     @media (max-width: 600px) {
-      main { padding: 16px; }
-      .prob-layout, .h2h-top { grid-template-columns: 1fr; }
-      .vs { display: none; }
+      main {
+        padding: 16px;
+      }
+
+      .prob-layout,
+      .h2h-top {
+        grid-template-columns: 1fr;
+      }
+
+      .vs {
+        display: none;
+      }
     }
   </style>
 </head>
+
 <body>
 
-<header>
-  <div>
-    <div class="logo">F1<span> Intelligence</span></div>
-    <div class="logo-sub">COMP3011 &middot; University of Leeds &middot; Interactive API Dashboard</div>
+  <header>
+    <div>
+      <div class="logo">F1<span> Intelligence</span></div>
+      <div class="logo-sub">COMP3011 &middot; University of Leeds &middot; Interactive API Dashboard</div>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" onclick="tab(this,'prob')">Win Probability</button>
+    <button class="tab" onclick="tab(this,'standings')">Standings</button>
+    <button class="tab" onclick="tab(this,'h2h')">Head-to-Head</button>
+    <button class="tab" onclick="tab(this,'weather')">Weather Impact</button>
+    <button class="tab" onclick="tab(this,'ai')">AI Summaries</button>
+    <button class="tab" onclick="tab(this,'winners')">Top Winners</button>
   </div>
-</header>
 
-<div class="tabs">
-  <button class="tab active" onclick="tab(this,'prob')">Win Probability</button>
-  <button class="tab" onclick="tab(this,'standings')">Standings</button>
-  <button class="tab" onclick="tab(this,'h2h')">Head-to-Head</button>
-  <button class="tab" onclick="tab(this,'ai')">AI Summaries</button>
-  <button class="tab" onclick="tab(this,'winners')">Top Winners</button>
-</div>
+  <main>
 
-<main>
-
-  <!-- WIN PROBABILITY ───────────────────────────────────────────────────────── -->
-  <div id="prob" class="panel active">
-    <div class="card">
-      <div class="card-title">Win Probability Calculator</div>
-      <div class="card-sub">Weighted model: circuit rate (40%) + career rate (30%) + recent form (20%) + constructor (10%)</div>
-      <div class="row">
-        <div class="field">
-          <label>Driver</label>
-          <input id="pd-input" type="text" placeholder="Search driver name…" autocomplete="off">
-          <div class="drop" id="pd-drop"></div>
-          <input id="pd-id" type="hidden">
-        </div>
-        <div class="field" style="max-width:130px">
-          <label>Season (optional)</label>
-          <select id="pd-season" onchange="loadProbRaces()"><option value="">— any —</option></select>
-        </div>
-        <div class="field" style="max-width:240px">
-          <label>Race / Circuit (optional)</label>
-          <select id="pd-race"><option value="">Overall probability</option></select>
-        </div>
-        <button class="btn" onclick="calcProb()">Calculate</button>
-      </div>
-      <div id="pd-err" class="err hidden"></div>
-      <div id="pd-loading" class="loading hidden">Calculating…</div>
-      <div id="pd-result" class="hidden">
-        <div class="prob-layout">
-          <div class="prob-circle">
-            <div class="prob-pct" id="pd-pct">—</div>
-            <div class="prob-label">win probability</div>
-            <div class="prob-name" id="pd-dname"></div>
-            <div class="prob-circuit" id="pd-cname"></div>
+    <!-- WIN PROBABILITY ───────────────────────────────────────────────────────── -->
+    <div id="prob" class="panel active">
+      <div class="card">
+        <div class="card-title">Race Win Probability</div>
+        <div class="card-sub">Select a race to see all drivers ranked by predicted win probability. Probabilities are
+          normalised to sum to 100% — logistic regression trained on 9,926 historical race results.</div>
+        <div class="row">
+          <div class="field" style="max-width:130px">
+            <label>Season</label>
+            <select id="pd-season" onchange="loadProbRaces()"></select>
           </div>
-          <div>
-            <div class="factor">
-              <div class="factor-header"><span>Circuit win rate <small style="color:var(--muted)">(40%)</small></span><span class="factor-val" id="fv-circuit">—</span></div>
-              <div class="bar-bg"><div class="bar-fg" id="fb-circuit"></div></div>
-            </div>
-            <div class="factor">
-              <div class="factor-header"><span>Overall career win rate <small style="color:var(--muted)">(30%)</small></span><span class="factor-val" id="fv-overall">—</span></div>
-              <div class="bar-bg"><div class="bar-fg" id="fb-overall"></div></div>
-            </div>
-            <div class="factor">
-              <div class="factor-header"><span>Recent form — last 10 races <small style="color:var(--muted)">(20%)</small></span><span class="factor-val" id="fv-recent">—</span></div>
-              <div class="bar-bg"><div class="bar-fg" id="fb-recent"></div></div>
-            </div>
-            <div class="factor">
-              <div class="factor-header"><span>Constructor strength <small style="color:var(--muted)">(10%)</small></span><span class="factor-val" id="fv-ctor">—</span></div>
-              <div class="bar-bg"><div class="bar-fg" id="fb-ctor"></div></div>
-            </div>
-            <div class="factor-meta" id="pd-meta"></div>
+          <div class="field" style="max-width:280px">
+            <label>Race</label>
+            <select id="pd-race">
+              <option value="">— select a race —</option>
+            </select>
+          </div>
+          <button class="btn" onclick="calcProb()">Calculate</button>
+        </div>
+        <div id="pd-err" class="err hidden"></div>
+        <div id="pd-loading" class="loading hidden">Calculating probabilities for all drivers…</div>
+        <div id="pd-result" class="hidden">
+          <div id="pd-circuit-label" style="color:var(--muted);font-size:12px;margin-bottom:12px"></div>
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Driver</th>
+                <th>Win Probability</th>
+                <th style="min-width:160px">Relative</th>
+              </tr>
+            </thead>
+            <tbody id="pd-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- STANDINGS ────────────────────────────────────────────────────────────── -->
+    <div id="standings" class="panel">
+      <div class="card">
+        <div class="card-title">Driver Championship Standings</div>
+        <div class="row">
+          <div class="field" style="max-width:180px">
+            <label>Season</label>
+            <select id="s-season" onchange="loadStandings()"></select>
           </div>
         </div>
+        <div id="s-loading" class="loading">Loading standings…</div>
+        <div id="s-err" class="err hidden"></div>
+        <div id="s-table" class="hidden"></div>
       </div>
     </div>
-  </div>
 
-  <!-- STANDINGS ────────────────────────────────────────────────────────────── -->
-  <div id="standings" class="panel">
-    <div class="card">
-      <div class="card-title">Driver Championship Standings</div>
-      <div class="row">
-        <div class="field" style="max-width:180px">
-          <label>Season</label>
-          <select id="s-season" onchange="loadStandings()"></select>
+    <!-- HEAD-TO-HEAD ─────────────────────────────────────────────────────────── -->
+    <div id="h2h" class="panel">
+      <div class="card">
+        <div class="card-title">Head-to-Head Comparison</div>
+        <div class="card-sub">Career statistics and direct race comparisons between two drivers</div>
+        <div class="row">
+          <div class="field">
+            <label>Driver 1</label>
+            <input id="h1-input" type="text" placeholder="Search driver…" autocomplete="off">
+            <div class="drop" id="h1-drop"></div>
+            <input id="h1-id" type="hidden">
+          </div>
+          <div class="field">
+            <label>Driver 2</label>
+            <input id="h2-input" type="text" placeholder="Search driver…" autocomplete="off">
+            <div class="drop" id="h2-drop"></div>
+            <input id="h2-id" type="hidden">
+          </div>
+          <div class="field" style="max-width:120px">
+            <label>From year</label>
+            <select id="h2h-from">
+              <option value="">All time</option>
+            </select>
+          </div>
+          <div class="field" style="max-width:120px">
+            <label>To year</label>
+            <select id="h2h-to">
+              <option value="">All time</option>
+            </select>
+          </div>
+          <button class="btn" onclick="loadH2H()">Compare</button>
         </div>
-      </div>
-      <div id="s-loading" class="loading">Loading standings…</div>
-      <div id="s-err" class="err hidden"></div>
-      <div id="s-table" class="hidden"></div>
-    </div>
-  </div>
-
-  <!-- HEAD-TO-HEAD ─────────────────────────────────────────────────────────── -->
-  <div id="h2h" class="panel">
-    <div class="card">
-      <div class="card-title">Head-to-Head Comparison</div>
-      <div class="card-sub">Career statistics and direct race comparisons between two drivers</div>
-      <div class="row">
-        <div class="field">
-          <label>Driver 1</label>
-          <input id="h1-input" type="text" placeholder="Search driver…" autocomplete="off">
-          <div class="drop" id="h1-drop"></div>
-          <input id="h1-id" type="hidden">
-        </div>
-        <div class="field">
-          <label>Driver 2</label>
-          <input id="h2-input" type="text" placeholder="Search driver…" autocomplete="off">
-          <div class="drop" id="h2-drop"></div>
-          <input id="h2-id" type="hidden">
-        </div>
-        <div class="field" style="max-width:120px">
-          <label>From year</label>
-          <select id="h2h-from"><option value="">All time</option></select>
-        </div>
-        <div class="field" style="max-width:120px">
-          <label>To year</label>
-          <select id="h2h-to"><option value="">All time</option></select>
-        </div>
-        <button class="btn" onclick="loadH2H()">Compare</button>
-      </div>
-      <div id="h2h-err" class="err hidden"></div>
-      <div id="h2h-loading" class="loading hidden">Loading…</div>
-      <div id="h2h-result" class="hidden"></div>
-    </div>
-  </div>
-
-  <!-- AI SUMMARIES ─────────────────────────────────────────────────────────── -->
-  <div id="ai" class="panel">
-    <div class="card">
-      <div class="card-title">AI Race Narratives</div>
-      <div class="card-sub">Claude Haiku generates commentary from race result data — cached for reproducibility without an API key</div>
-      <div class="row">
-        <div class="field" style="max-width:150px">
-          <label>Season</label>
-          <select id="ai-season" onchange="loadRaces()"></select>
-        </div>
-        <div class="field">
-          <label>Race</label>
-          <select id="ai-race"><option>Select season first…</option></select>
-        </div>
-        <button class="btn" onclick="loadSummary()">Get Summary</button>
-      </div>
-      <div id="ai-err" class="err hidden"></div>
-      <div id="ai-loading" class="loading hidden">Generating summary…</div>
-      <div id="ai-result" class="hidden">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-          <strong id="ai-race-name" style="font-size:15px"></strong>
-          <span class="badge" id="ai-badge"></span>
-        </div>
-        <p class="summary" id="ai-text"></p>
+        <div id="h2h-err" class="err hidden"></div>
+        <div id="h2h-loading" class="loading hidden">Loading…</div>
+        <div id="h2h-result" class="hidden"></div>
       </div>
     </div>
-  </div>
 
-  <!-- TOP WINNERS ──────────────────────────────────────────────────────────── -->
-  <div id="winners" class="panel">
-    <div class="card">
-      <div class="card-title">All-Time Top Race Winners</div>
-      <div class="row">
-        <div class="field" style="max-width:150px">
-          <label>Show top</label>
-          <select id="w-limit" onchange="loadWinners()">
-            <option value="10">10</option>
-            <option value="20">20</option>
-            <option value="50">50</option>
-          </select>
+    <!-- WEATHER IMPACT ────────────────────────────────────────────────────── -->
+    <div id="weather" class="panel">
+      <div class="card">
+        <div class="card-title">🌧️ Driver Wet vs Dry Performance</div>
+        <div class="card-sub">How does weather affect a driver? Compare win rate, podiums, and average finish in wet vs
+          dry races — powered by historical Open-Meteo weather data.</div>
+        <div class="row">
+          <div class="field">
+            <label>Driver</label>
+            <input id="wx-input" type="text" placeholder="Search driver…" autocomplete="off">
+            <div class="drop" id="wx-drop"></div>
+            <input id="wx-id" type="hidden">
+          </div>
+          <button class="btn" onclick="loadWeatherDriver()">Analyse</button>
+        </div>
+        <div id="wx-err" class="err hidden"></div>
+        <div id="wx-loading" class="loading hidden">Analysing weather performance…</div>
+        <div id="wx-result" class="hidden"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🏁 Race Weather Conditions</div>
+        <div class="card-sub">See the exact weather at any race — temperature, rain, wind — plus how it correlated with
+          race results</div>
+        <div class="row">
+          <div class="field" style="max-width:130px">
+            <label>Season</label>
+            <select id="wx-season" onchange="loadWeatherRaces()"></select>
+          </div>
+          <div class="field" style="max-width:280px">
+            <label>Race</label>
+            <select id="wx-race">
+              <option value="">— select a race —</option>
+            </select>
+          </div>
+          <button class="btn" onclick="loadRaceWeather()">Show Weather</button>
+        </div>
+        <div id="wxr-err" class="err hidden"></div>
+        <div id="wxr-loading" class="loading hidden">Fetching weather data…</div>
+        <div id="wxr-result" class="hidden"></div>
+      </div>
+    </div>
+
+    <!-- AI SUMMARIES ─────────────────────────────────────────────────────────── -->
+    <div id="ai" class="panel">
+      <div class="card">
+        <div class="card-title">AI Race Narratives</div>
+        <div class="card-sub">Claude Haiku generates commentary from race result data — cached for reproducibility
+          without an API key</div>
+        <div class="row">
+          <div class="field" style="max-width:150px">
+            <label>Season</label>
+            <select id="ai-season" onchange="loadRaces()"></select>
+          </div>
+          <div class="field">
+            <label>Race</label>
+            <select id="ai-race">
+              <option>Select season first…</option>
+            </select>
+          </div>
+          <button class="btn" onclick="loadSummary()">Get Summary</button>
+        </div>
+        <div id="ai-err" class="err hidden"></div>
+        <div id="ai-loading" class="loading hidden">Generating summary…</div>
+        <div id="ai-result" class="hidden">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+            <strong id="ai-race-name" style="font-size:15px"></strong>
+            <span class="badge" id="ai-badge"></span>
+          </div>
+          <p class="summary" id="ai-text"></p>
         </div>
       </div>
-      <div id="w-loading" class="loading">Loading…</div>
-      <div id="w-err" class="err hidden"></div>
-      <div id="w-table" class="hidden"></div>
     </div>
-  </div>
 
-</main>
+    <!-- TOP WINNERS ──────────────────────────────────────────────────────────── -->
+    <div id="winners" class="panel">
+      <div class="card">
+        <div class="card-title">All-Time Top Race Winners</div>
+        <div class="row">
+          <div class="field" style="max-width:150px">
+            <label>Show top</label>
+            <select id="w-limit" onchange="loadWinners()">
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+            </select>
+          </div>
+        </div>
+        <div id="w-loading" class="loading">Loading…</div>
+        <div id="w-err" class="err hidden"></div>
+        <div id="w-table" class="hidden"></div>
+      </div>
+    </div>
 
-<script>
-// ── Helpers ──────────────────────────────────────────────────────────────────
-const $ = id => document.getElementById(id);
-const show  = id => $(id).classList.remove('hidden');
-const hide  = id => $(id).classList.add('hidden');
-const setText = (id, v) => $(id).textContent = v;
-const pct = v => v != null ? (v * 100).toFixed(1) + '%' : '—';
+  </main>
 
-async function get(path) {
-  const r = await fetch(path);
-  if (!r.ok) throw new Error(((await r.json().catch(() => ({}))).detail) || r.statusText);
-  return r.json();
-}
+  <script>
+    // ── Helpers ──────────────────────────────────────────────────────────────────
+    const $ = id => document.getElementById(id);
+    const show = id => $(id).classList.remove('hidden');
+    const hide = id => $(id).classList.add('hidden');
+    const setText = (id, v) => $(id).textContent = v;
+    const pct = v => v != null ? (v * 100).toFixed(1) + '%' : '—';
 
-// ── Tab switch ───────────────────────────────────────────────────────────────
-function tab(btn, panelId) {
-  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  btn.classList.add('active');
-  $(panelId).classList.add('active');
-}
+    async function get(path) {
+      const r = await fetch(path);
+      if (!r.ok) throw new Error(((await r.json().catch(() => ({}))).detail) || r.statusText);
+      return r.json();
+    }
 
-// ── Autocomplete ─────────────────────────────────────────────────────────────
-function autocomplete(inputId, dropId, hiddenId) {
-  const inp = $(inputId), drop = $(dropId);
-  let timer;
-  inp.addEventListener('input', () => {
-    clearTimeout(timer);
-    const q = inp.value.trim();
-    if (q.length < 2) { drop.classList.remove('open'); return; }
-    timer = setTimeout(async () => {
+    // ── Tab switch ───────────────────────────────────────────────────────────────
+    function tab(btn, panelId) {
+      document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      $(panelId).classList.add('active');
+    }
+
+    // ── Autocomplete ─────────────────────────────────────────────────────────────
+    function autocomplete(inputId, dropId, hiddenId) {
+      const inp = $(inputId), drop = $(dropId);
+      let timer;
+      inp.addEventListener('input', () => {
+        clearTimeout(timer);
+        const q = inp.value.trim();
+        if (q.length < 2) { drop.classList.remove('open'); return; }
+        timer = setTimeout(async () => {
+          try {
+            const drivers = await get(`/api/v1/drivers?name=${encodeURIComponent(q)}`);
+            drop.innerHTML = drivers.slice(0, 8).map(d =>
+              `<div class="drop-item" data-id="${d.id}" data-name="${d.name}">${d.name} <small>${d.nationality || ''}</small></div>`
+            ).join('') || '<div class="drop-item" style="color:var(--muted)">No results</div>';
+            drop.classList.add('open');
+            drop.querySelectorAll('.drop-item[data-id]').forEach(el => {
+              el.onclick = () => {
+                $(hiddenId).value = el.dataset.id;
+                inp.value = el.dataset.name;
+                drop.classList.remove('open');
+              };
+            });
+          } catch { }
+        }, 280);
+      });
+      document.addEventListener('click', e => {
+        if (!inp.contains(e.target) && !drop.contains(e.target)) drop.classList.remove('open');
+      });
+    }
+    autocomplete('h1-input', 'h1-drop', 'h1-id');
+    autocomplete('h2-input', 'h2-drop', 'h2-id');
+
+    // ── Win probability — race dropdown ──────────────────────────────────────────
+    async function loadProbRaces() {
+      const season = $('pd-season').value;
+      const sel = $('pd-race');
+      sel.innerHTML = '<option value="">— select a race —</option>';
+      if (!season) return;
       try {
-        const drivers = await get(`/api/v1/drivers?name=${encodeURIComponent(q)}`);
-        drop.innerHTML = drivers.slice(0, 8).map(d =>
-          `<div class="drop-item" data-id="${d.id}" data-name="${d.name}">${d.name} <small>${d.nationality || ''}</small></div>`
-        ).join('') || '<div class="drop-item" style="color:var(--muted)">No results</div>';
-        drop.classList.add('open');
-        drop.querySelectorAll('.drop-item[data-id]').forEach(el => {
-          el.onclick = () => {
-            $(hiddenId).value = el.dataset.id;
-            inp.value = el.dataset.name;
-            drop.classList.remove('open');
-          };
+        const races = await get(`/api/v1/races?season=${season}`);
+        races.forEach(r => {
+          const opt = document.createElement('option');
+          opt.value = r.id;
+          opt.textContent = `R${r.round} — ${r.name}`;
+          sel.appendChild(opt);
         });
-      } catch {}
-    }, 280);
-  });
-  document.addEventListener('click', e => {
-    if (!inp.contains(e.target) && !drop.contains(e.target)) drop.classList.remove('open');
-  });
-}
-autocomplete('pd-input', 'pd-drop', 'pd-id');
-autocomplete('h1-input', 'h1-drop', 'h1-id');
-autocomplete('h2-input', 'h2-drop', 'h2-id');
+      } catch { }
+    }
 
-// ── Win probability — race dropdown ──────────────────────────────────────────
-async function loadProbRaces() {
-  const season = $('pd-season').value;
-  const sel = $('pd-race');
-  sel.innerHTML = '<option value="">Overall probability</option>';
-  if (!season) return;
-  try {
-    const races = await get(`/api/v1/races?season=${season}`);
-    races.forEach(r => {
-      const opt = document.createElement('option');
-      opt.value = r.circuit_name;
-      opt.textContent = `R${r.round} — ${r.name}`;
-      sel.appendChild(opt);
-    });
-  } catch {}
-}
+    async function calcProb() {
+      const raceId = $('pd-race').value;
+      hide('pd-err'); hide('pd-result');
+      if (!raceId) { show('pd-err'); setText('pd-err', 'Please select a race.'); return; }
+      show('pd-loading');
+      try {
+        const data = await get(`/api/v1/analytics/races/${raceId}/win-probabilities`);
+        hide('pd-loading');
+        const maxProb = data[0].win_probability;
+        const tbody = $('pd-tbody');
+        tbody.innerHTML = data.map((d, i) => {
+          const n = i + 1;
+          const cls = n === 1 ? 'p1' : n === 2 ? 'p2' : n === 3 ? 'p3' : 'pn';
+          const pctVal = (d.win_probability * 100).toFixed(1);
+          const barW = maxProb > 0 ? ((d.win_probability / maxProb) * 100).toFixed(1) : 0;
+          return `<tr>
+        <td><span class="pos ${cls}">${n}</span></td>
+        <td><strong>${d.driver_name}</strong></td>
+        <td style="color:var(--red);font-weight:700">${pctVal}%</td>
+        <td><div class="bar-bg"><div class="bar-fg" style="width:${barW}%"></div></div></td>
+      </tr>`;
+        }).join('');
+        setText('pd-circuit-label', data[0]?.circuit_name ? `Circuit: ${data[0].circuit_name} · Probabilities normalised to sum to 100%` : '');
+        show('pd-result');
+      } catch (e) {
+        hide('pd-loading'); show('pd-err'); setText('pd-err', e.message);
+      }
+    }
 
-async function calcProb() {
-  const id = $('pd-id').value;
-  const circuit = $('pd-race').value;
-  hide('pd-err'); hide('pd-result');
-  if (!id) { show('pd-err'); setText('pd-err', 'Please select a driver from the dropdown.'); return; }
-  show('pd-loading');
-  try {
-    const url = `/api/v1/analytics/drivers/${id}/win-probability` + (circuit ? `?circuit_name=${encodeURIComponent(circuit)}` : '');
-    const d = await get(url);
-    hide('pd-loading');
-    setText('pd-pct', (d.win_probability * 100).toFixed(1) + '%');
-    setText('pd-dname', d.driver_name);
-    setText('pd-cname', d.circuit_name ? `at ${d.circuit_name}` : 'Overall probability');
-    const f = d.factors;
-    const setF = (suf, key) => {
-      setText(`fv-${suf}`, pct(f[key]));
-      $(`fb-${suf}`).style.width = ((f[key] || 0) * 100) + '%';
-    };
-    setF('circuit', 'circuit_win_rate');
-    setF('overall', 'overall_win_rate');
-    setF('recent',  'recent_form_rate');
-    setF('ctor',    'constructor_win_rate');
-    setText('pd-meta',
-      `${f.total_wins} wins from ${f.total_races} career starts` +
-      (f.circuit_appearances != null ? ` · ${f.circuit_wins} wins from ${f.circuit_appearances} starts at this circuit` : '')
-    );
-    show('pd-result');
-  } catch (e) {
-    hide('pd-loading'); show('pd-err'); setText('pd-err', e.message);
-  }
-}
-
-// ── Standings ─────────────────────────────────────────────────────────────────
-async function loadStandings() {
-  const season = $('s-season').value;
-  hide('s-err'); hide('s-table'); show('s-loading');
-  try {
-    const data = await get(`/api/v1/analytics/drivers/standings?season=${season}`);
-    hide('s-loading');
-    const rows = data.map((d, i) => {
-      const n = i + 1;
-      const cls = n === 1 ? 'p1' : n === 2 ? 'p2' : n === 3 ? 'p3' : 'pn';
-      return `<tr>
+    // ── Standings ─────────────────────────────────────────────────────────────────
+    async function loadStandings() {
+      const season = $('s-season').value;
+      hide('s-err'); hide('s-table'); show('s-loading');
+      try {
+        const data = await get(`/api/v1/analytics/drivers/standings?season=${season}`);
+        hide('s-loading');
+        const rows = data.map((d, i) => {
+          const n = i + 1;
+          const cls = n === 1 ? 'p1' : n === 2 ? 'p2' : n === 3 ? 'p3' : 'pn';
+          return `<tr>
         <td><span class="pos ${cls}">${n}</span></td>
         <td><strong>${d.driver_name}</strong></td>
         <td style="color:var(--muted)">${d.nationality || '—'}</td>
         <td style="color:var(--green);font-weight:700">${d.wins}</td>
         <td style="font-weight:700">${d.total_points != null ? d.total_points.toFixed(1) : '—'}</td>
       </tr>`;
-    }).join('');
-    $('s-table').innerHTML = `<table>
+        }).join('');
+        $('s-table').innerHTML = `<table>
       <thead><tr><th>Pos</th><th>Driver</th><th>Nationality</th><th>Wins</th><th>Points</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>`;
-    show('s-table');
-  } catch (e) {
-    hide('s-loading'); show('s-err'); setText('s-err', e.message);
-  }
-}
+        show('s-table');
+      } catch (e) {
+        hide('s-loading'); show('s-err'); setText('s-err', e.message);
+      }
+    }
 
-// ── Head-to-head ──────────────────────────────────────────────────────────────
-async function loadH2H() {
-  const id1 = $('h1-id').value, id2 = $('h2-id').value;
-  hide('h2h-err'); hide('h2h-result');
-  if (!id1 || !id2) { show('h2h-err'); setText('h2h-err', 'Please select both drivers.'); return; }
-  if (id1 === id2)   { show('h2h-err'); setText('h2h-err', 'Please select two different drivers.'); return; }
-  show('h2h-loading');
-  try {
-    const yf = $('h2h-from').value, yt = $('h2h-to').value;
-    let qs = '';
-    if (yf) qs += `?year_from=${yf}`;
-    if (yt) qs += (qs ? '&' : '?') + `year_to=${yt}`;
-    const data = await get(`/api/v1/analytics/drivers/${id1}/vs/${id2}${qs}`);
-    hide('h2h-loading');
-    const d1 = data.driver_1, d2 = data.driver_2, hh = data.head_to_head;
+    // ── Head-to-head ──────────────────────────────────────────────────────────────
+    async function loadH2H() {
+      const id1 = $('h1-id').value, id2 = $('h2-id').value;
+      hide('h2h-err'); hide('h2h-result');
+      if (!id1 || !id2) { show('h2h-err'); setText('h2h-err', 'Please select both drivers.'); return; }
+      if (id1 === id2) { show('h2h-err'); setText('h2h-err', 'Please select two different drivers.'); return; }
+      show('h2h-loading');
+      try {
+        const yf = $('h2h-from').value, yt = $('h2h-to').value;
+        let qs = '';
+        if (yf) qs += `?year_from=${yf}`;
+        if (yt) qs += (qs ? '&' : '?') + `year_to=${yt}`;
+        const data = await get(`/api/v1/analytics/drivers/${id1}/vs/${id2}${qs}`);
+        hide('h2h-loading');
+        const d1 = data.driver_1, d2 = data.driver_2, hh = data.head_to_head;
 
-    const d1w = hh.driver_1_ahead > hh.driver_2_ahead;
-    const d2w = hh.driver_2_ahead > hh.driver_1_ahead;
+        const d1w = hh.driver_1_ahead > hh.driver_2_ahead;
+        const d2w = hh.driver_2_ahead > hh.driver_1_ahead;
 
-    const row = (label, v1, v2) => {
-      const n1 = parseFloat(v1), n2 = parseFloat(v2);
-      const c1 = (!isNaN(n1) && !isNaN(n2) && n1 > n2) ? ' h2h-winner' : '';
-      const c2 = (!isNaN(n1) && !isNaN(n2) && n2 > n1) ? ' h2h-winner' : '';
-      return `<div class="stat-row">
+        const row = (label, v1, v2) => {
+          const n1 = parseFloat(v1), n2 = parseFloat(v2);
+          const c1 = (!isNaN(n1) && !isNaN(n2) && n1 > n2) ? ' h2h-winner' : '';
+          const c2 = (!isNaN(n1) && !isNaN(n2) && n2 > n1) ? ' h2h-winner' : '';
+          return `<div class="stat-row">
         <span class="stat-v${c1}">${v1}</span>
         <span class="stat-key">${label}</span>
         <span class="stat-v${c2}">${v2}</span>
       </div>`;
-    };
+        };
 
-    $('h2h-result').innerHTML = `
+        $('h2h-result').innerHTML = `
       <div class="h2h-top">
         <div>
           <div class="h2h-num${d1w ? ' h2h-winner' : ''}">${hh.driver_1_ahead}</div>
@@ -496,86 +1011,210 @@ async function loadH2H() {
       ${row('Win Rate', pct(d1.total_wins / (d1.total_races || 1)), pct(d2.total_wins / (d2.total_races || 1)))}
       ${row('Avg Finish', d1.average_finish ?? '—', d2.average_finish ?? '—')}
     `;
-    show('h2h-result');
-  } catch (e) {
-    hide('h2h-loading'); show('h2h-err'); setText('h2h-err', e.message);
-  }
-}
+        show('h2h-result');
+      } catch (e) {
+        hide('h2h-loading'); show('h2h-err'); setText('h2h-err', e.message);
+      }
+    }
 
-// ── AI summaries ──────────────────────────────────────────────────────────────
-async function loadRaces() {
-  const sel = $('ai-race');
-  sel.innerHTML = '<option>Loading…</option>';
-  try {
-    const races = await get(`/api/v1/races?season=${$('ai-season').value}`);
-    sel.innerHTML = races.map(r => `<option value="${r.id}">R${r.round} — ${r.name}</option>`).join('');
-  } catch { sel.innerHTML = '<option>Error loading races</option>'; }
-}
+    // ── AI summaries ──────────────────────────────────────────────────────────────
+    async function loadRaces() {
+      const sel = $('ai-race');
+      sel.innerHTML = '<option>Loading…</option>';
+      try {
+        const races = await get(`/api/v1/races?season=${$('ai-season').value}`);
+        sel.innerHTML = races.map(r => `<option value="${r.id}">R${r.round} — ${r.name}</option>`).join('');
+      } catch { sel.innerHTML = '<option>Error loading races</option>'; }
+    }
 
-async function loadSummary() {
-  const id = $('ai-race').value;
-  hide('ai-err'); hide('ai-result'); show('ai-loading');
-  try {
-    const d = await get(`/api/v1/ai/races/${id}/summary`);
-    hide('ai-loading');
-    setText('ai-race-name', `${d.race_name} (${d.season})`);
-    const badge = $('ai-badge');
-    badge.textContent = d.cached ? 'Cached' : 'Live AI';
-    badge.className = 'badge ' + (d.cached ? 'cached' : 'live');
-    setText('ai-text', d.summary);
-    show('ai-result');
-  } catch (e) {
-    hide('ai-loading'); show('ai-err'); setText('ai-err', e.message);
-  }
-}
+    async function loadSummary() {
+      const id = $('ai-race').value;
+      hide('ai-err'); hide('ai-result'); show('ai-loading');
+      try {
+        const d = await get(`/api/v1/ai/races/${id}/summary`);
+        hide('ai-loading');
+        setText('ai-race-name', `${d.race_name} (${d.season})`);
+        const badge = $('ai-badge');
+        badge.textContent = d.cached ? 'Cached' : 'Live AI';
+        badge.className = 'badge ' + (d.cached ? 'cached' : 'live');
+        setText('ai-text', d.summary);
+        show('ai-result');
+      } catch (e) {
+        hide('ai-loading'); show('ai-err'); setText('ai-err', e.message);
+      }
+    }
 
-// ── Top winners ───────────────────────────────────────────────────────────────
-async function loadWinners() {
-  hide('w-err'); hide('w-table'); show('w-loading');
-  try {
-    const data = await get(`/api/v1/analytics/drivers/top-winners?limit=${$('w-limit').value}`);
-    hide('w-loading');
-    const rows = data.map((d, i) => {
-      const n = i + 1;
-      const cls = n === 1 ? 'p1' : n === 2 ? 'p2' : n === 3 ? 'p3' : 'pn';
-      return `<tr>
+    // ── Top winners ───────────────────────────────────────────────────────────────
+    async function loadWinners() {
+      hide('w-err'); hide('w-table'); show('w-loading');
+      try {
+        const data = await get(`/api/v1/analytics/drivers/top-winners?limit=${$('w-limit').value}`);
+        hide('w-loading');
+        const rows = data.map((d, i) => {
+          const n = i + 1;
+          const cls = n === 1 ? 'p1' : n === 2 ? 'p2' : n === 3 ? 'p3' : 'pn';
+          return `<tr>
         <td><span class="pos ${cls}">${n}</span></td>
         <td><strong>${d.driver_name}</strong></td>
         <td style="color:var(--muted)">${d.nationality || '—'}</td>
         <td style="color:var(--green);font-size:17px;font-weight:800">${d.wins}</td>
       </tr>`;
-    }).join('');
-    $('w-table').innerHTML = `<table>
+        }).join('');
+        $('w-table').innerHTML = `<table>
       <thead><tr><th>Rank</th><th>Driver</th><th>Nationality</th><th>Wins</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>`;
-    show('w-table');
-  } catch (e) {
-    hide('w-loading'); show('w-err'); setText('w-err', e.message);
-  }
-}
+        show('w-table');
+      } catch (e) {
+        hide('w-loading'); show('w-err'); setText('w-err', e.message);
+      }
+    }
 
-// ── Init ──────────────────────────────────────────────────────────────────────
-(function populateSeasons() {
-  const seasons = [];
-  for (let y = 2025; y >= 2000; y--) seasons.push(y);
-  const opts = seasons.map(y => `<option value="${y}"${y === 2024 ? ' selected' : ''}>${y}</option>`).join('');
-  $('s-season').innerHTML = opts;
-  $('ai-season').innerHTML = opts;
+    // ── Weather — driver wet/dry performance ─────────────────────────────────────
+    autocomplete('wx-input', 'wx-drop', 'wx-id');
 
-  // Win probability season picker (no default selection)
-  $('pd-season').innerHTML = '<option value="">— any —</option>' +
-    seasons.map(y => `<option value="${y}">${y}</option>`).join('');
+    async function loadWeatherDriver() {
+      const id = $('wx-id').value;
+      hide('wx-err'); hide('wx-result');
+      if (!id) { show('wx-err'); setText('wx-err', 'Please search and select a driver.'); return; }
+      show('wx-loading');
+      try {
+        const d = await get(`/api/v1/analytics/weather/drivers/${id}`);
+        hide('wx-loading');
+        if (d.total_races_with_weather_data === 0) {
+          show('wx-err'); setText('wx-err', 'No weather data available for this driver.');
+          return;
+        }
 
-  // H2H year range pickers
-  const allOpt = '<option value="">All time</option>';
-  const yearOpts = seasons.map(y => `<option value="${y}">${y}</option>`).join('');
-  $('h2h-from').innerHTML = allOpt + yearOpts;
-  $('h2h-to').innerHTML = allOpt + yearOpts;
-})();
-loadStandings();
-loadRaces();
-loadWinners();
-</script>
+        const wet = d.wet || {}, dry = d.dry || {};
+        const bar = (label, wVal, dVal, fmt) => {
+          const wv = wVal ?? 0, dv = dVal ?? 0, total = wv + dv || 1;
+          const wPct = ((wv / total) * 100).toFixed(0), dPct = ((dv / total) * 100).toFixed(0);
+          return `<div class="wx-bar-row">
+        <span class="wx-bar-label">${label}</span>
+        <div class="wx-bar-pair">
+          <div class="wx-bar-wet" style="width:${wPct}%">${fmt ? fmt(wv) : wv}</div>
+          <div class="wx-bar-dry" style="width:${dPct}%">${fmt ? fmt(dv) : dv}</div>
+        </div>
+      </div>`;
+        };
+
+        $('wx-result').innerHTML = `
+      <div class="wx-grid">
+        <div class="wx-stat"><div class="wx-val">${d.total_races_with_weather_data}</div><div class="wx-lbl">Races with Data</div></div>
+        <div class="wx-stat"><div class="wx-val wx-wet">${wet.races || 0}</div><div class="wx-lbl">Wet Races</div></div>
+        <div class="wx-stat"><div class="wx-val wx-dry">${dry.races || 0}</div><div class="wx-lbl">Dry Races</div></div>
+        <div class="wx-stat"><div class="wx-val" style="color:var(--green)">${wet.avg_finish ?? '—'}</div><div class="wx-lbl">Avg Finish (Wet)</div></div>
+        <div class="wx-stat"><div class="wx-val" style="color:var(--green)">${dry.avg_finish ?? '—'}</div><div class="wx-lbl">Avg Finish (Dry)</div></div>
+      </div>
+      <div style="margin-bottom:8px;font-size:11px;color:var(--muted)">
+        <span class="wx-condition"><span class="wx-dot wet"></span> Wet</span>
+        <span class="wx-condition" style="margin-left:6px"><span class="wx-dot dry"></span> Dry</span>
+      </div>
+      ${bar('Wins', wet.wins, dry.wins)}
+      ${bar('Podiums', wet.podiums, dry.podiums)}
+      ${bar('Win Rate', wet.win_rate, dry.win_rate, v => (v * 100).toFixed(1) + '%')}
+      ${bar('DNFs', wet.dnfs, dry.dnfs)}
+      ${bar('Points', wet.total_points, dry.total_points, v => v.toFixed(0))}
+      <div class="wx-verdict">${d.verdict}</div>
+    `;
+        show('wx-result');
+      } catch (e) {
+        hide('wx-loading'); show('wx-err'); setText('wx-err', e.message);
+      }
+    }
+
+    // ── Weather — race weather impact ────────────────────────────────────────────
+    async function loadWeatherRaces() {
+      const season = $('wx-season').value;
+      const sel = $('wx-race');
+      sel.innerHTML = '<option value="">— select a race —</option>';
+      if (!season) return;
+      try {
+        const races = await get(`/api/v1/races?season=${season}`);
+        races.forEach(r => {
+          const opt = document.createElement('option');
+          opt.value = r.id;
+          opt.textContent = `R${r.round} — ${r.name}`;
+          sel.appendChild(opt);
+        });
+      } catch { }
+    }
+
+    async function loadRaceWeather() {
+      const raceId = $('wx-race').value;
+      hide('wxr-err'); hide('wxr-result');
+      if (!raceId) { show('wxr-err'); setText('wxr-err', 'Please select a race.'); return; }
+      show('wxr-loading');
+      try {
+        const d = await get(`/api/v1/analytics/weather/races/${raceId}`);
+        hide('wxr-loading');
+
+        const w = d.weather;
+        const weatherHtml = w ? `
+      <div class="wx-grid">
+        <div class="wx-stat"><div class="wx-val" style="color:var(--red)">${w.temperature_max ?? '—'}°</div><div class="wx-lbl">Max Temp (°C)</div></div>
+        <div class="wx-stat"><div class="wx-val" style="color:#4fc3f7">${w.temperature_min ?? '—'}°</div><div class="wx-lbl">Min Temp (°C)</div></div>
+        <div class="wx-stat"><div class="wx-val wx-wet">${w.precipitation_mm ?? '—'}</div><div class="wx-lbl">Rain (mm)</div></div>
+        <div class="wx-stat"><div class="wx-val">${w.wind_speed_max ?? '—'}</div><div class="wx-lbl">Wind (km/h)</div></div>
+      </div>
+      <div style="margin-bottom:14px">
+        <span class="wx-condition"><span class="wx-dot ${w.is_wet ? 'wet' : 'dry'}"></span> ${w.condition}${w.is_wet ? ' (Wet Race)' : ' (Dry Race)'}</span>
+      </div>
+    ` : '<div style="color:var(--muted);font-size:13px;margin-bottom:14px">No weather data available for this race.</div>';
+
+        const rows = d.results.map((r, i) => {
+          const n = r.position ?? '—';
+          const cls = n === 1 ? 'p1' : n === 2 ? 'p2' : n === 3 ? 'p3' : 'pn';
+          return `<tr>
+        <td><span class="pos ${typeof n === 'number' ? cls : 'pn'}">${n}</span></td>
+        <td><strong>${r.driver_name}</strong></td>
+        <td style="color:var(--muted)">${r.grid_position ?? '—'}</td>
+        <td style="font-weight:700">${r.points ?? 0}</td>
+        <td style="color:var(--muted);font-size:12px">${r.status ?? ''}</td>
+      </tr>`;
+        }).join('');
+
+        $('wxr-result').innerHTML = `
+      <div style="margin-bottom:6px;font-size:15px;font-weight:700">${d.race_name} <span style="color:var(--muted);font-weight:400">${d.season} · ${d.circuit_name}</span></div>
+      ${weatherHtml}
+      <table>
+        <thead><tr><th>Pos</th><th>Driver</th><th>Grid</th><th>Points</th><th>Status</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+        show('wxr-result');
+      } catch (e) {
+        hide('wxr-loading'); show('wxr-err'); setText('wxr-err', e.message);
+      }
+    }
+
+    // ── Init ──────────────────────────────────────────────────────────────────────
+    (function populateSeasons() {
+      const seasons = [];
+      for (let y = 2025; y >= 2000; y--) seasons.push(y);
+      const opts = seasons.map(y => `<option value="${y}"${y === 2024 ? ' selected' : ''}>${y}</option>`).join('');
+      $('s-season').innerHTML = opts;
+      $('ai-season').innerHTML = opts;
+
+      // Win probability season picker — default to 2024 and pre-load races
+      $('pd-season').innerHTML = seasons.map(y => `<option value="${y}"${y === 2024 ? ' selected' : ''}>${y}</option>`).join('');
+      loadProbRaces();
+
+      // Weather season picker
+      $('wx-season').innerHTML = seasons.map(y => `<option value="${y}"${y === 2024 ? ' selected' : ''}>${y}</option>`).join('');
+      loadWeatherRaces();
+
+      // H2H year range pickers
+      const allOpt = '<option value="">All time</option>';
+      const yearOpts = seasons.map(y => `<option value="${y}">${y}</option>`).join('');
+      $('h2h-from').innerHTML = allOpt + yearOpts;
+      $('h2h-to').innerHTML = allOpt + yearOpts;
+    })();
+    loadStandings();
+    loadRaces();
+    loadWinners();
+  </script>
 </body>
+
 </html>

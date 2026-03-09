@@ -72,3 +72,18 @@ class TestPredictionCRUD:
             "race_id": 1, "predicted_driver_id": 1, "predicted_position": 1
         })
         assert response.status_code == 401
+
+    def test_create_prediction_rejects_invalid_position(self, client, db):
+        driver, race = seed_fixtures(db)
+        headers = register_and_login(client)
+        response = client.post("/api/v1/predictions", json={
+            "race_id": race.id, "predicted_driver_id": driver.id, "predicted_position": 0
+        }, headers=headers)
+        assert response.status_code == 422
+
+    def test_create_prediction_rejects_non_positive_ids(self, client, db):
+        headers = register_and_login(client)
+        response = client.post("/api/v1/predictions", json={
+            "race_id": 0, "predicted_driver_id": -1, "predicted_position": 1
+        }, headers=headers)
+        assert response.status_code == 422
