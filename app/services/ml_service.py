@@ -300,3 +300,43 @@ def predict_win_probability(db: Session, driver_id: int, circuit_name: str | Non
         },
         "model_info": meta,
     }
+
+
+def predict_race_win_probabilities(db: Session, race_id: int) -> list[dict] | None:
+    """Return normalised win probabilities for all drivers in a given race.
+
+    Fetches every driver who competed, computes their raw ML probability,
+    then normalises so that all probabilities sum to 1.0.
+    """
+    race = db.query(Race).filter(Race.id == race_id).first()
+    if not race:
+        return None
+
+    driver_ids = (
+        db.query(RaceResult.driver_id)
+        .filter(RaceResult.race_id == race_id)
+        .all()
+    )
+    if not driver_ids:
+        return None
+
+    entries = []
+    for (did,) in driver_ids:
+        pred = predict_win_probability(db, did, race.circuit_name)
+        if pred:
+            entries.append(pred)
+
+    if not entries:
+        return None
+
+    total = sum(e["win_probability"] for e in entries)
+    if total > 0:
+        for e in entries:
+            e["win_probability"] = round(e["win_probability"] / total, 4)
+    else:
+        equal = round(1.0 / len(entries), 4)
+        for e in entries:
+            e["win_probability"] = equal
+
+    entries.sort(key=lambda x: x["win_probability"], reverse=True)
+    return entries

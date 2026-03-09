@@ -17,6 +17,7 @@ from app.models.constructor import Constructor
 from app.models.driver import Driver
 from app.models.race import Race
 from app.models.race_result import RaceResult
+from app.models.weather_cache import WeatherCache
 
 CSV_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "csv")
 
@@ -26,6 +27,14 @@ def _read(filename: str) -> list[dict]:
     if not os.path.exists(path):
         print(f"  ERROR: {path} not found.")
         sys.exit(1)
+    with open(path, newline="", encoding="utf-8") as f:
+        return list(csv.DictReader(f))
+
+
+def _read_optional(filename: str) -> list[dict] | None:
+    path = os.path.join(CSV_DIR, filename)
+    if not os.path.exists(path):
+        return None
     with open(path, newline="", encoding="utf-8") as f:
         return list(csv.DictReader(f))
 
@@ -48,7 +57,7 @@ def run() -> None:
     db = SessionLocal()
     try:
         # ── Drivers ──────────────────────────────────────────────────────────
-        print("\n[1/4] Loading drivers...")
+        print("\n[1/5] Loading drivers...")
         rows = _read("drivers.csv")
         inserted = 0
         for r in rows:
@@ -71,7 +80,7 @@ def run() -> None:
         print(f"  {inserted} drivers inserted ({len(rows) - inserted} already existed).")
 
         # ── Constructors ─────────────────────────────────────────────────────
-        print("\n[2/4] Loading constructors...")
+        print("\n[2/5] Loading constructors...")
         rows = _read("constructors.csv")
         inserted = 0
         for r in rows:
@@ -89,7 +98,7 @@ def run() -> None:
         print(f"  {inserted} constructors inserted ({len(rows) - inserted} already existed).")
 
         # ── Races ────────────────────────────────────────────────────────────
-        print("\n[3/4] Loading races...")
+        print("\n[3/5] Loading races...")
         rows = _read("races.csv")
         inserted = 0
         for r in rows:
@@ -111,7 +120,7 @@ def run() -> None:
         print(f"  {inserted} races inserted ({len(rows) - inserted} already existed).")
 
         # ── Race results ─────────────────────────────────────────────────────
-        print("\n[4/4] Loading race results...")
+        print("\n[4/5] Loading race results...")
         rows = _read("race_results.csv")
         inserted = 0
         batch = []
@@ -141,6 +150,29 @@ def run() -> None:
             db.bulk_save_objects(batch)
             db.commit()
         print(f"\n  {inserted} results inserted ({len(rows) - inserted} already existed).")
+
+        # ── Weather cache ────────────────────────────────────────────────────
+        print("\n[5/5] Loading weather data...")
+        weather_rows = _read_optional("weather.csv")
+        if weather_rows is None:
+            print("  SKIP: weather.csv not found (run `python -m scripts.fetch_weather` to generate).")
+        else:
+            inserted = 0
+            for r in weather_rows:
+                race_id = int(r["race_id"])
+                if db.query(WeatherCache).filter(WeatherCache.race_id == race_id).first():
+                    continue
+                db.add(WeatherCache(
+                    race_id=race_id,
+                    temperature_max=_float(r["temperature_max"]),
+                    temperature_min=_float(r["temperature_min"]),
+                    precipitation_mm=_float(r["precipitation_mm"]),
+                    wind_speed_max=_float(r["wind_speed_max"]),
+                    weather_code=_int(r["weather_code"]),
+                ))
+                inserted += 1
+            db.commit()
+            print(f"  {inserted} weather records inserted ({len(weather_rows) - inserted} already existed).")
 
         print("\n✓ CSV seed complete.")
     except Exception as e:

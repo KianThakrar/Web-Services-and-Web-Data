@@ -94,14 +94,15 @@ Then open **http://127.0.0.1:8000/** for the dashboard.
 
 ## Running Tests
 
-Tests use SQLite in-memory — no PostgreSQL or Docker required.
+Tests use a file-backed SQLite database (`test.db`) that is recreated for each test
+function — no PostgreSQL or Docker required.
 
 ```bash
 source venv/bin/activate
-pytest tests/ -v
+DEBUG=false pytest tests/ -v
 ```
 
-All 55 tests should pass.
+All 60 tests should pass.
 
 ---
 
@@ -168,6 +169,14 @@ All 55 tests should pass.
 | GET | `/api/v1/analytics/drivers/{id}/circuits/{name}` | Driver circuit performance history |
 | GET | `/api/v1/analytics/constructors/era-dominance` | Constructor dominance by decade |
 | GET | `/api/v1/analytics/drivers/{id}/win-probability?circuit_name=Monza` | Win probability model (optional circuit) |
+| GET | `/api/v1/analytics/races/{id}/win-probabilities` | Normalised win probabilities for all drivers in a race |
+
+### Weather × Performance
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/analytics/weather/circuits/{name}` | Circuit weather profile (avg temp, rain %, conditions history) |
+| GET | `/api/v1/analytics/weather/drivers/{id}` | Driver wet vs dry performance (win rate, avg finish, points delta) |
+| GET | `/api/v1/analytics/weather/races/{id}` | Race weather conditions + full results |
 
 ### AI
 | Method | Endpoint | Description |
@@ -223,13 +232,14 @@ This ensures **full reproducibility** for examiners cloning without an API key.
 
 ## Frontend Dashboard
 
-Visiting **http://localhost:8000/** serves an interactive single-page dashboard with five tabs:
+Visiting **http://localhost:8000/** serves an interactive single-page dashboard with six tabs:
 
 | Tab | What it shows |
 |-----|--------------|
 | **Win Probability** | Select driver + season + race → animated probability breakdown across 4 factors |
 | **Standings** | Championship standings table for any season 2000–2025 |
 | **Head-to-Head** | Two-driver comparison with optional year-range filter |
+| **Weather Impact** | Driver wet vs dry performance with bar charts + race weather conditions viewer |
 | **AI Summaries** | Claude-generated race narratives with Cached / Live AI badge |
 | **Top Winners** | All-time race winners leaderboard |
 
@@ -239,20 +249,22 @@ No build step — vanilla JS, single HTML file, served directly by FastAPI.
 
 ## Data
 
-Race data covers **seasons 2000–2025** sourced from the [Jolpica F1 API](https://api.jolpi.ca/ergast/f1/) (Ergast-compatible):
+Race data covers **seasons 2000–2025** sourced from the [Jolpica F1 API](https://api.jolpi.ca/ergast/f1/) (Ergast-compatible). Weather data is sourced from the [Open-Meteo Archive API](https://open-meteo.com/) (free, no API key):
 
-| Table | Rows |
-|-------|------|
-| Drivers | 874 |
-| Constructors | 214 |
-| Races | 503 |
-| Race Results | 10,550 |
+| Table | Rows | Source |
+|-------|------|--------|
+| Drivers | 874 | Jolpica F1 API |
+| Constructors | 214 | Jolpica F1 API |
+| Races | 503 | Jolpica F1 API |
+| Race Results | 10,550 | Jolpica F1 API |
+| Weather Cache | 500 | Open-Meteo Archive API |
 
-Data is bundled as CSV files in `data/csv/` so the database can be seeded instantly without any external API access. To refresh or extend the data:
+All data is bundled as CSV files in `data/csv/` so the database can be seeded instantly without any external API access. To refresh or extend the data:
 
 ```bash
-python -m scripts.seed --api      # re-fetch from Jolpica API
-python -m scripts.export_csv      # export updated DB back to CSV
+python -m scripts.seed --api          # re-fetch F1 data from Jolpica API
+python -m scripts.export_csv          # export updated DB back to CSV
+python -m scripts.fetch_weather       # re-fetch weather from Open-Meteo → data/csv/weather.csv
 ```
 
 ---
@@ -261,7 +273,7 @@ python -m scripts.export_csv      # export updated DB back to CSV
 
 The project includes an MCP (Model Context Protocol) server for integration with AI clients like Claude Desktop and Claude Code.
 
-### Tools available (10 tools):
+### Tools available (13 tools):
 - `search_drivers` — search drivers by name or nationality
 - `get_driver_details` — full driver profile
 - `list_races` — races by season
@@ -272,6 +284,14 @@ The project includes an MCP (Model Context Protocol) server for integration with
 - `get_season_summary_tool` — season statistics
 - `get_all_time_top_winners` — all-time win leaderboard
 - `get_driver_win_probability` — win probability model (circuit + career + form + constructor)
+- `get_circuit_weather` — historical weather profile for a circuit
+- `get_driver_wet_vs_dry` — driver performance in wet vs dry conditions
+- `get_race_weather` — weather conditions and results for a specific race
+
+### Verify the MCP server:
+```bash
+python -m scripts.test_mcp           # lists all tools and tests DB connectivity
+```
 
 ### Run the MCP server:
 
@@ -345,7 +365,7 @@ Full endpoint reference including parameters, request/response schemas, authenti
 │   ├── database.py     # SQLAlchemy engine and session
 │   └── main.py         # FastAPI application entry point
 ├── data/
-│   └── csv/            # Bundled CSV snapshots (874 drivers, 503 races, 10,550 results)
+│   └── csv/            # Bundled CSV snapshots (874 drivers, 503 races, 10,550 results, 500 weather)
 ├── examples/           # Multi-client MCP demo scripts
 │   ├── mcp_claude_demo.py
 │   ├── mcp_openai_demo.py
@@ -355,11 +375,13 @@ Full endpoint reference including parameters, request/response schemas, authenti
 ├── scripts/            # Data seeding and utility scripts
 │   ├── seed.py         # Master entry point (auto-detects CSV vs API)
 │   ├── seed_from_csv.py# Fast CSV-based seed (no API calls)
+│   ├── fetch_weather.py# Fetch weather from Open-Meteo → data/csv/weather.csv
+│   ├── test_mcp.py     # MCP server verification script
 │   ├── export_csv.py   # Export DB to CSV snapshots
 │   ├── seed_drivers.py # Fetch drivers from Jolpica API
 │   ├── seed_constructors.py
 │   └── seed_races.py   # Fetch races 2000–2025 from Jolpica API
-├── tests/              # Pytest test suite (55 tests)
+├── tests/              # Pytest test suite (60 tests)
 ├── alembic/            # Database migrations
 ├── docs/               # API documentation PDF
 ├── mcp_server.py       # MCP server (stdio + SSE transport)

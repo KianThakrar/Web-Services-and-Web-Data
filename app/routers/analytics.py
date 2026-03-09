@@ -15,6 +15,12 @@ from app.services.analytics_service import (
     get_top_race_winners,
     get_win_probability,
 )
+from app.services.ml_service import predict_race_win_probabilities
+from app.services.weather_service import (
+    get_circuit_weather_profile,
+    get_driver_weather_performance,
+    get_race_weather_impact,
+)
 
 router = APIRouter(prefix="/api/v1/analytics", tags=["Analytics"])
 
@@ -89,6 +95,20 @@ def constructor_era_dominance(db: Session = Depends(get_db)):
     return get_constructor_era_dominance(db)
 
 
+@router.get("/races/{race_id}/win-probabilities")
+def race_win_probabilities(race_id: int, db: Session = Depends(get_db)):
+    """
+    Normalised win probabilities for every driver in a race.
+
+    Computes each driver's raw ML win probability, then normalises so that all
+    probabilities sum to 1.0. Returns drivers sorted by probability descending.
+    """
+    result = predict_race_win_probabilities(db, race_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Race not found or has no results")
+    return result
+
+
 @router.get("/drivers/{driver_id}/win-probability")
 def driver_win_probability(
     driver_id: int,
@@ -98,15 +118,65 @@ def driver_win_probability(
     """
     Estimate a driver's probability of winning at a given circuit.
 
-    Combines four weighted factors into a score between 0 and 1:
-    - Circuit win rate (40%) — historical wins at this specific circuit
-    - Overall career win rate (30%) — all-time wins across all circuits
-    - Recent form (20%) — win rate across the last 10 races
-    - Constructor strength (10%) — their constructor's all-time win rate
+    Uses a logistic regression model trained on historical race results with
+    walk-forward feature construction (no look-ahead bias). The model combines:
+    - decayed career win rate
+    - Bayesian-smoothed circuit win rate
+    - recent points form (last 10 races)
+    - constructor form (last 3 seasons)
 
-    When no circuit is specified, overall win rate replaces the circuit factor.
+    Returns the calibrated probability plus factor-level diagnostics.
     """
     result = get_win_probability(db, driver_id, circuit_name)
     if result is None:
         raise HTTPException(status_code=404, detail="Driver not found")
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Weather × Performance endpoints
+# ---------------------------------------------------------------------------
+
+
+@router.get("/weather/circuits/{circuit_name}")
+def circuit_weather_profile(circuit_name: str, db: Session = Depends(get_db)):
+    """
+    Weather profile for an F1 circuit — average temperature, rain frequency,
+    and common conditions across all historical races at the circuit.
+
+    Uses data from the Open-Meteo Archive API, pre-fetched and stored as CSV.
+    """
+    result = get_circuit_weather_profile(db, circuit_name)
+    if result is None:
+        raise HTTPException(status_code=404, detail="No weather data found for this circuit")
+    return result
+
+
+@router.get("/weather/drivers/{driver_id}")
+def driver_weather_performance(driver_id: int, db: Session = Depends(get_db)):
+    """
+    How a driver performs in wet vs dry conditions.
+
+    Splits the driver's race history into wet and dry races based on WMO
+    weather codes and precipitation data, then compares win rate, podium rate,
+    and average finishing position across conditions.
+    """
+    result = get_driver_weather_performance(db, driver_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Driver not found")
+    return result
+
+
+@router.get("/weather/races/{race_id}")
+def race_weather_impact(race_id: int, db: Session = Depends(get_db)):
+    """
+    Weather conditions and full driver results for a specific race.
+
+    Returns temperature, precipitation, wind speed, and WMO condition
+    classification alongside the complete race results — allowing analysis
+    of how weather influenced finishing positions.
+    """
+    result = get_race_weather_impact(db, race_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Race not found")
     return result

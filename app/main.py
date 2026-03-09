@@ -20,6 +20,17 @@ app = FastAPI(
     title=settings.app_name,
     description="A data-driven REST API for Formula 1 racing statistics, predictions, and AI-powered race analysis.",
     version="1.0.0",
+    openapi_tags=[
+        {"name": "Health", "description": "Server health checks and API metadata."},
+        {"name": "Authentication", "description": "User registration, JWT login/logout, and token management. Protected endpoints require a Bearer token."},
+        {"name": "Drivers", "description": "Browse and search the F1 driver database (874 drivers, 2000–2025). Supports filtering by name and nationality."},
+        {"name": "Constructors", "description": "Browse F1 constructor (team) records. Supports filtering by nationality."},
+        {"name": "Races", "description": "Query race calendar and results across 25 seasons. Supports filtering by season."},
+        {"name": "Predictions", "description": "CRUD operations for user race predictions. Requires authentication — each user manages their own predictions."},
+        {"name": "Favourites", "description": "CRUD operations for user favourite drivers. Requires authentication — each user manages their own list."},
+        {"name": "Analytics", "description": "Advanced statistical endpoints: championship standings, head-to-head comparisons, win probability models, era dominance analysis, weather × performance correlation, and more."},
+        {"name": "AI", "description": "AI-powered race narrative summaries using Claude Haiku. Uses a cache-first strategy with deterministic fallback when no API key is configured."},
+    ],
 )
 
 # Attach rate limiter state so slowapi middleware can resolve it

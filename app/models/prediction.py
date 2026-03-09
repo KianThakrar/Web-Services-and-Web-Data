@@ -1,6 +1,6 @@
 """Prediction model for user race outcome predictions (CRUD resource)."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -19,8 +19,12 @@ class Prediction(Base):
     predicted_driver_id: Mapped[int] = mapped_column(Integer, ForeignKey("drivers.id"), nullable=False)
     predicted_position: Mapped[int] = mapped_column(Integer, default=1)
     notes: Mapped[str] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
 
     user = relationship("User", back_populates="predictions")
     race = relationship("Race", back_populates="predictions")
