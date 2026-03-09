@@ -2,13 +2,12 @@
 
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
-from jose import jwt as _jwt
+from jose import JWTError
 from sqlalchemy.orm import Session
 
-from app.auth.jwt import create_access_token, get_current_user, oauth2_scheme
-from app.config import settings
+from app.auth.jwt import create_access_token, decode_access_token, get_current_user, oauth2_scheme
 from app.database import get_db
 from app.main import limiter
 from app.models.token_blacklist import TokenBlacklist
@@ -38,12 +37,26 @@ def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db
 @router.post("/logout", status_code=status.HTTP_200_OK)
 def logout(
     token: str = Depends(oauth2_scheme),
-    current_user: User = Depends(get_current_user),  # noqa: ARG001 (validates token before blacklisting)
     db: Session = Depends(get_db),
 ):
-    """Revoke the current access token. All subsequent requests with this token return 401."""
-    payload = _jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+    """Revoke the current access token. Endpoint is idempotent for already-revoked tokens."""
+    try:
+        payload = decode_access_token(token)
+    except JWTError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+            headers={"WWW-Authenticate": "Bearer"},
+        ) from exc
+
     jti = payload.get("jti")
+    if not jti:
+        return {"message": "Logged out successfully"}
+
+    existing = db.query(TokenBlacklist).filter(TokenBlacklist.jti == jti).first()
+    if existing:
+        return {"message": "Logged out successfully"}
+
     expires_at = datetime.fromtimestamp(payload["exp"], tz=UTC)
     db.add(TokenBlacklist(jti=jti, expires_at=expires_at))
     db.commit()
