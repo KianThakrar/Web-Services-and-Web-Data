@@ -102,7 +102,7 @@ source venv/bin/activate
 DEBUG=false pytest tests/ -v
 ```
 
-All 60 tests should pass.
+All 69 tests should pass.
 
 ---
 
@@ -127,19 +127,19 @@ All 60 tests should pass.
 ### Drivers
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/v1/drivers` | List drivers (filter: `?nationality=British&name=hamilton`) |
+| GET | `/api/v1/drivers` | List drivers (filter: `?nationality=British&name=hamilton`, paginate: `?limit=20&offset=0`) |
 | GET | `/api/v1/drivers/{id}` | Get driver by ID |
 
 ### Constructors
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/v1/constructors` | List all constructors (filter: `?nationality=German`) |
+| GET | `/api/v1/constructors` | List constructors (filter: `?nationality=German`, paginate: `?limit=50&offset=0`) |
 | GET | `/api/v1/constructors/{id}` | Get constructor by ID |
 
 ### Races
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/v1/races` | List all races (filter: `?season=2024`) |
+| GET | `/api/v1/races` | List races (filter: `?season=2024`, paginate: `?limit=50&offset=0`) |
 | GET | `/api/v1/races/{id}` | Get race by ID |
 
 ### Predictions (Auth required)

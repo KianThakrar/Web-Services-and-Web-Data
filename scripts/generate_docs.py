@@ -533,13 +533,13 @@ html = f"""<!DOCTYPE html>
 <!-- Models -->
 <h2>Data Models</h2>
 <div class="model-box">
-  <strong>Win Probability Model:</strong> The <code>GET /api/v1/analytics/drivers/{{id}}/win-probability</code> endpoint combines
-  Circuit Win Rate (40%), Overall Career Win Rate (30%), Recent Form — last 10 races (20%), and Constructor Strength (10%)
-  into a probability score between 0 and 1.
+  <strong>Win Probability Model:</strong> The <code>GET /api/v1/analytics/drivers/{{id}}/win-probability</code> endpoint
+  uses a logistic regression model trained on historical results with walk-forward feature construction.
+  Features include decayed career form, Bayesian-smoothed circuit form, recent points form, and constructor form.
 </div>
 <div class="model-box">
   <strong>Weather Classification:</strong> Races are classified as wet or dry using WMO weather codes and precipitation thresholds (&gt;0.5mm).
-  The <code>weather_advantage_score</code> (0–100) combines finishing position and points-per-race differences — scores &gt;50 indicate better performance in wet conditions.
+  Driver weather analytics compare wet vs dry win rate, podium rate, average finish, DNFs, and total points.
   Weather data is sourced from the <strong>Open-Meteo Archive API</strong> (500 races, 2000–2025).
 </div>
 
