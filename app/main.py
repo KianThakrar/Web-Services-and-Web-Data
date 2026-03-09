@@ -1,5 +1,6 @@
 """FastAPI application entry point with middleware and router registration."""
 
+import logging
 import os
 
 from fastapi import FastAPI, Request, Response
@@ -8,8 +9,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.config import settings
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Rate limiter — shared instance imported by auth router for login/register
@@ -38,8 +42,19 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:  # noqa: ARG001
+    """Preserve intended HTTP status codes and details for expected application errors."""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+        headers=exc.headers,
+    )
+
+
 @app.exception_handler(Exception)
 async def general_exception_handler(request: Request, exc: Exception) -> JSONResponse:  # noqa: ARG001
+    logger.exception("Unhandled exception while processing %s %s", request.method, request.url.path)
     return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
 # ---------------------------------------------------------------------------
@@ -51,7 +66,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
     allow_credentials=False,
-    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type"],
 )
 

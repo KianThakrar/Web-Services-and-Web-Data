@@ -14,6 +14,8 @@ from app.database import get_db
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+_BLACKLIST_CLEANUP_INTERVAL = timedelta(minutes=15)
+_last_blacklist_cleanup: datetime | None = None
 
 
 def hash_password(plain_password: str) -> str:
@@ -50,6 +52,20 @@ def create_access_token(data: dict) -> str:
     return jwt.encode(payload, settings.secret_key, algorithm=settings.algorithm)
 
 
+def purge_expired_blacklist_tokens(db: Session, *, now: datetime | None = None, force: bool = False) -> None:
+    """Delete expired blacklist rows periodically to keep auth checks bounded."""
+    from app.models.token_blacklist import TokenBlacklist
+
+    global _last_blacklist_cleanup
+    now = now or datetime.now(UTC)
+    if not force and _last_blacklist_cleanup and now - _last_blacklist_cleanup < _BLACKLIST_CLEANUP_INTERVAL:
+        return
+
+    db.query(TokenBlacklist).filter(TokenBlacklist.expires_at < now).delete(synchronize_session=False)
+    db.commit()
+    _last_blacklist_cleanup = now
+
+
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     from app.models.token_blacklist import TokenBlacklist
     from app.models.user import User
@@ -67,6 +83,8 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         jti: str | None = payload.get("jti")
     except JWTError:
         raise credentials_exception
+
+    purge_expired_blacklist_tokens(db)
 
     if jti and db.query(TokenBlacklist).filter(TokenBlacklist.jti == jti).first():
         raise credentials_exception

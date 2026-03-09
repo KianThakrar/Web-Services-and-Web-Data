@@ -94,3 +94,14 @@ class TestAnalyticsEndpoints:
     def test_win_probability_returns_404_for_unknown_driver(self, client):
         response = client.get("/api/v1/analytics/drivers/99999/win-probability")
         assert response.status_code == 404
+
+    def test_constructor_standings_rejects_invalid_season(self, client):
+        response = client.get("/api/v1/analytics/constructors/standings?season=-1")
+        assert response.status_code == 422
+
+    def test_head_to_head_rejects_invalid_year_range(self, client, db):
+        d1, d2, _, _ = seed_analytics_data(db)
+        response = client.get(
+            f"/api/v1/analytics/drivers/{d1.id}/vs/{d2.id}?year_from=2025&year_to=2024"
+        )
+        assert response.status_code == 400

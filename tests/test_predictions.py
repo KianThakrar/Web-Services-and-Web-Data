@@ -16,8 +16,8 @@ def seed_fixtures(db):
 
 
 def register_and_login(client):
-    client.post("/api/v1/auth/register", json={"username": "pred_user", "email": "p@test.com", "password": "password123"})
-    resp = client.post("/api/v1/auth/login", data={"username": "pred_user", "password": "password123"})
+    client.post("/api/v1/auth/register", json={"username": "pred_user", "email": "p@test.com", "password": "Password123"})
+    resp = client.post("/api/v1/auth/login", data={"username": "pred_user", "password": "Password123"})
     return {"Authorization": f"Bearer {resp.json()['access_token']}"}
 
 

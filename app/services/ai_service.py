@@ -10,12 +10,16 @@ This ensures the examiner can clone and run without any API key while still
 demonstrating live AI integration when configured.
 """
 
+import logging
+
 from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.models.ai_summary import AISummaryCache
 from app.models.race import Race
 from app.models.race_result import RaceResult
+
+logger = logging.getLogger(__name__)
 
 
 def _build_race_context(db: Session, race: Race) -> str:
@@ -92,6 +96,7 @@ def get_race_summary(db: Session, race_id: int) -> dict:
         try:
             summary_text = _generate_with_claude(context)
         except Exception:
+            logger.exception("Claude summary generation failed for race_id=%s; using deterministic fallback", race_id)
             summary_text = _fallback_summary(race, db)
     else:
         summary_text = _fallback_summary(race, db)

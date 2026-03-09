@@ -27,6 +27,12 @@ class UserCreate(BaseModel):
             raise ValueError("Password must be at least 8 characters")
         if len(v) > 72:
             raise ValueError("Password must not exceed 72 characters (bcrypt limit)")
+        if not re.search(r"[a-z]", v):
+            raise ValueError("Password must contain at least one lowercase letter")
+        if not re.search(r"[A-Z]", v):
+            raise ValueError("Password must contain at least one uppercase letter")
+        if not re.search(r"\d", v):
+            raise ValueError("Password must contain at least one digit")
         return v
 
 
