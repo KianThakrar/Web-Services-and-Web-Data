@@ -13,8 +13,18 @@ Configuration:
     Defaults to the docker-compose database on port 5433.
 """
 
-from mcp.server.fastmcp import FastMCP
+import secrets
 
+import anyio
+from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp.server import SseServerTransport
+from starlette.applications import Starlette
+from starlette.datastructures import Headers
+from starlette.responses import JSONResponse
+from starlette.routing import Mount, Route
+import uvicorn
+
+from app.config import settings
 from app.database import SessionLocal
 from app.models.driver import Driver
 from app.models.constructor import Constructor
@@ -35,6 +45,76 @@ from app.services.weather_service import (
 )
 
 mcp = FastMCP("F1 Racing Intelligence API")
+
+
+def _is_loopback_host(host: str) -> bool:
+    return host in {"127.0.0.1", "localhost", "::1"}
+
+
+def _extract_mcp_token(headers: Headers) -> str:
+    auth_header = headers.get("authorization", "")
+    if auth_header.lower().startswith("bearer "):
+        return auth_header[7:].strip()
+    return headers.get("x-mcp-api-key", "").strip()
+
+
+def _mcp_request_authorized(headers: Headers) -> bool:
+    if not settings.mcp_api_key:
+        return True
+    presented = _extract_mcp_token(headers)
+    return bool(presented) and secrets.compare_digest(presented, settings.mcp_api_key)
+
+
+async def run_sse_async(host: str, port: int) -> None:
+    """Run the SSE transport with optional API-key protection."""
+    sse = SseServerTransport("/messages/")
+
+    async def handle_sse(request):
+        if not _mcp_request_authorized(request.headers):
+            return JSONResponse(
+                status_code=401,
+                content={"detail": "MCP API key required"},
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        async with sse.connect_sse(request.scope, request.receive, request._send) as streams:
+            await mcp._mcp_server.run(
+                streams[0],
+                streams[1],
+                mcp._mcp_server.create_initialization_options(),
+            )
+
+    async def handle_messages(scope, receive, send):
+        if not _mcp_request_authorized(Headers(scope=scope)):
+            response = JSONResponse(
+                status_code=401,
+                content={"detail": "MCP API key required"},
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+            await response(scope, receive, send)
+            return
+        await sse.handle_post_message(scope, receive, send)
+
+    starlette_app = Starlette(
+        debug=settings.debug,
+        routes=[
+            Route("/sse", endpoint=handle_sse),
+            Mount("/messages/", app=handle_messages),
+        ],
+    )
+
+    config = uvicorn.Config(
+        starlette_app,
+        host=host,
+        port=port,
+        log_level=mcp.settings.log_level.lower(),
+    )
+    server = uvicorn.Server(config)
+    await server.serve()
+
+
+def run_sse(host: str, port: int) -> None:
+    """Synchronous wrapper for the authenticated SSE transport."""
+    anyio.run(run_sse_async, host, port)
 
 
 # ── Driver tools ─────────────────────────────────────────────────────────────
@@ -297,7 +377,8 @@ def get_race_weather(race_id: int) -> dict:
         db.close()
 
 
-if __name__ == "__main__":
+def main(argv: list[str] | None = None) -> None:
+    """CLI entry point for stdio and SSE MCP transports."""
     import argparse
 
     parser = argparse.ArgumentParser(description="F1 Racing Intelligence MCP Server")
@@ -306,11 +387,30 @@ if __name__ == "__main__":
         action="store_true",
         help="Use SSE (HTTP) transport on port 3001 instead of stdio",
     )
-    parser.add_argument("--port", type=int, default=3001, help="Port for SSE transport (default: 3001)")
-    args = parser.parse_args()
+    parser.add_argument(
+        "--host",
+        default=settings.mcp_sse_host,
+        help="Host for SSE transport (default: MCP_SSE_HOST or 127.0.0.1)",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=settings.mcp_sse_port,
+        help="Port for SSE transport (default: MCP_SSE_PORT or 3001)",
+    )
+    args = parser.parse_args(argv)
 
     if args.sse:
-        print(f"Starting MCP server with SSE transport on http://localhost:{args.port}/sse")
-        mcp.run(transport="sse", host="0.0.0.0", port=args.port)
+        if not _is_loopback_host(args.host) and not settings.mcp_api_key:
+            parser.error("MCP_API_KEY must be set before exposing SSE beyond localhost")
+
+        print(f"Starting MCP server with SSE transport on http://{args.host}:{args.port}/sse")
+        mcp.settings.port = args.port
+        mcp.settings.host = args.host
+        run_sse(args.host, args.port)
     else:
         mcp.run(transport="stdio")
+
+
+if __name__ == "__main__":
+    main()

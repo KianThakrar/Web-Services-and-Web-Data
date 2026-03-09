@@ -8,7 +8,7 @@ class TestRegistration:
         response = client.post("/api/v1/auth/register", json={
             "username": "testuser",
             "email": "test@example.com",
-            "password": "securepassword123",
+            "password": "SecurePassword123",
         })
         assert response.status_code == 201
         data = response.json()
@@ -18,30 +18,38 @@ class TestRegistration:
         assert "hashed_password" not in data
 
     def test_register_duplicate_username_returns_409(self, client):
-        payload = {"username": "duplicate", "email": "a@example.com", "password": "password123"}
+        payload = {"username": "duplicate", "email": "a@example.com", "password": "Password123"}
         client.post("/api/v1/auth/register", json=payload)
         response = client.post("/api/v1/auth/register", json={
-            "username": "duplicate", "email": "b@example.com", "password": "password123"
+            "username": "duplicate", "email": "b@example.com", "password": "Password123"
         })
         assert response.status_code == 409
 
     def test_register_duplicate_email_returns_409(self, client):
         client.post("/api/v1/auth/register", json={
-            "username": "user1", "email": "same@example.com", "password": "password123"
+            "username": "user1", "email": "same@example.com", "password": "Password123"
         })
         response = client.post("/api/v1/auth/register", json={
-            "username": "user2", "email": "same@example.com", "password": "password123"
+            "username": "user2", "email": "same@example.com", "password": "Password123"
         })
         assert response.status_code == 409
+
+    def test_register_rejects_weak_password(self, client):
+        response = client.post("/api/v1/auth/register", json={
+            "username": "weakuser",
+            "email": "weak@example.com",
+            "password": "password123",
+        })
+        assert response.status_code == 422
 
 
 class TestLogin:
     def test_login_returns_access_token(self, client):
         client.post("/api/v1/auth/register", json={
-            "username": "loginuser", "email": "login@example.com", "password": "mypassword"
+            "username": "loginuser", "email": "login@example.com", "password": "Mypassword1"
         })
         response = client.post("/api/v1/auth/login", data={
-            "username": "loginuser", "password": "mypassword"
+            "username": "loginuser", "password": "Mypassword1"
         })
         assert response.status_code == 200
         data = response.json()
@@ -50,7 +58,7 @@ class TestLogin:
 
     def test_login_wrong_password_returns_401(self, client):
         client.post("/api/v1/auth/register", json={
-            "username": "user2", "email": "user2@example.com", "password": "correctpass"
+            "username": "user2", "email": "user2@example.com", "password": "CorrectPass1"
         })
         response = client.post("/api/v1/auth/login", data={
             "username": "user2", "password": "wrongpass"
@@ -71,10 +79,10 @@ class TestProtectedRoutes:
 
     def test_get_me_with_valid_token_returns_user(self, client):
         client.post("/api/v1/auth/register", json={
-            "username": "meuser", "email": "me@example.com", "password": "password123"
+            "username": "meuser", "email": "me@example.com", "password": "Password123"
         })
         login = client.post("/api/v1/auth/login", data={
-            "username": "meuser", "password": "password123"
+            "username": "meuser", "password": "Password123"
         })
         token = login.json()["access_token"]
         response = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
@@ -85,10 +93,10 @@ class TestProtectedRoutes:
 class TestLogout:
     def _register_and_login(self, client):
         client.post("/api/v1/auth/register", json={
-            "username": "logoutuser", "email": "logout@example.com", "password": "password123"
+            "username": "logoutuser", "email": "logout@example.com", "password": "Password123"
         })
         login = client.post("/api/v1/auth/login", data={
-            "username": "logoutuser", "password": "password123"
+            "username": "logoutuser", "password": "Password123"
         })
         return login.json()["access_token"]
 

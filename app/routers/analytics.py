@@ -1,6 +1,6 @@
 """Analytics endpoints — aggregated F1 statistics and insights."""
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -26,13 +26,19 @@ router = APIRouter(prefix="/api/v1/analytics", tags=["Analytics"])
 
 
 @router.get("/constructors/standings")
-def constructor_standings(season: int, db: Session = Depends(get_db)):
+def constructor_standings(
+    season: int = Query(..., ge=1950, le=2100),
+    db: Session = Depends(get_db),
+):
     """Return constructor championship standings for a season, ranked by points."""
     return get_constructor_standings(db, season)
 
 
 @router.get("/drivers/standings")
-def driver_standings(season: int, db: Session = Depends(get_db)):
+def driver_standings(
+    season: int = Query(..., ge=1950, le=2100),
+    db: Session = Depends(get_db),
+):
     """Return driver championship standings for a season, ranked by points."""
     return get_driver_standings(db, season)
 
@@ -50,13 +56,22 @@ def top_winners(limit: int = Query(default=10, ge=1, le=100), db: Session = Depe
 
 
 @router.get("/seasons/{season}/summary")
-def season_summary(season: int, db: Session = Depends(get_db)):
+def season_summary(
+    season: int = Path(..., ge=1950, le=2100),
+    db: Session = Depends(get_db),
+):
     """Return a high-level statistical summary for a given season."""
     return get_season_summary(db, season)
 
 
 @router.get("/drivers/{driver1_id}/vs/{driver2_id}")
-def head_to_head(driver1_id: int, driver2_id: int, year_from: int | None = None, year_to: int | None = None, db: Session = Depends(get_db)):
+def head_to_head(
+    driver1_id: int = Path(..., gt=0),
+    driver2_id: int = Path(..., gt=0),
+    year_from: int | None = Query(default=None, ge=1950, le=2100),
+    year_to: int | None = Query(default=None, ge=1950, le=2100),
+    db: Session = Depends(get_db),
+):
     """
     Head-to-head career comparison between two drivers.
 
@@ -64,6 +79,8 @@ def head_to_head(driver1_id: int, driver2_id: int, year_from: int | None = None,
     how many times each driver finished ahead of the other in shared races.
     Optionally restrict to a year range with year_from / year_to.
     """
+    if year_from is not None and year_to is not None and year_from > year_to:
+        raise HTTPException(status_code=400, detail="year_from must be less than or equal to year_to")
     result = get_head_to_head(db, driver1_id, driver2_id, year_from, year_to)
     if result is None:
         raise HTTPException(status_code=404, detail="One or both drivers not found")
@@ -71,7 +88,11 @@ def head_to_head(driver1_id: int, driver2_id: int, year_from: int | None = None,
 
 
 @router.get("/drivers/{driver_id}/circuits/{circuit_name}")
-def driver_circuit_performance(driver_id: int, circuit_name: str, db: Session = Depends(get_db)):
+def driver_circuit_performance(
+    driver_id: int = Path(..., gt=0),
+    circuit_name: str = Path(..., min_length=1),
+    db: Session = Depends(get_db),
+):
     """
     A driver's complete historical performance record at a specific circuit.
 
@@ -96,7 +117,10 @@ def constructor_era_dominance(db: Session = Depends(get_db)):
 
 
 @router.get("/races/{race_id}/win-probabilities")
-def race_win_probabilities(race_id: int, db: Session = Depends(get_db)):
+def race_win_probabilities(
+    race_id: int = Path(..., gt=0),
+    db: Session = Depends(get_db),
+):
     """
     Normalised win probabilities for every driver in a race.
 
@@ -111,7 +135,7 @@ def race_win_probabilities(race_id: int, db: Session = Depends(get_db)):
 
 @router.get("/drivers/{driver_id}/win-probability")
 def driver_win_probability(
-    driver_id: int,
+    driver_id: int = Path(..., gt=0),
     circuit_name: str | None = Query(default=None, description="Optional circuit name to scope the prediction"),
     db: Session = Depends(get_db),
 ):
@@ -139,7 +163,10 @@ def driver_win_probability(
 
 
 @router.get("/weather/circuits/{circuit_name}")
-def circuit_weather_profile(circuit_name: str, db: Session = Depends(get_db)):
+def circuit_weather_profile(
+    circuit_name: str = Path(..., min_length=1),
+    db: Session = Depends(get_db),
+):
     """
     Weather profile for an F1 circuit — average temperature, rain frequency,
     and common conditions across all historical races at the circuit.
@@ -153,7 +180,10 @@ def circuit_weather_profile(circuit_name: str, db: Session = Depends(get_db)):
 
 
 @router.get("/weather/drivers/{driver_id}")
-def driver_weather_performance(driver_id: int, db: Session = Depends(get_db)):
+def driver_weather_performance(
+    driver_id: int = Path(..., gt=0),
+    db: Session = Depends(get_db),
+):
     """
     How a driver performs in wet vs dry conditions.
 
@@ -168,7 +198,10 @@ def driver_weather_performance(driver_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/weather/races/{race_id}")
-def race_weather_impact(race_id: int, db: Session = Depends(get_db)):
+def race_weather_impact(
+    race_id: int = Path(..., gt=0),
+    db: Session = Depends(get_db),
+):
     """
     Weather conditions and full driver results for a specific race.
 

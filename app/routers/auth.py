@@ -7,7 +7,13 @@ from fastapi.security import OAuth2PasswordRequestForm
 from jose import JWTError
 from sqlalchemy.orm import Session
 
-from app.auth.jwt import create_access_token, decode_access_token, get_current_user, oauth2_scheme
+from app.auth.jwt import (
+    create_access_token,
+    decode_access_token,
+    get_current_user,
+    oauth2_scheme,
+    purge_expired_blacklist_tokens,
+)
 from app.database import get_db
 from app.main import limiter
 from app.models.token_blacklist import TokenBlacklist
@@ -48,6 +54,8 @@ def logout(
             detail="Invalid or expired token",
             headers={"WWW-Authenticate": "Bearer"},
         ) from exc
+
+    purge_expired_blacklist_tokens(db)
 
     jti = payload.get("jti")
     if not jti:

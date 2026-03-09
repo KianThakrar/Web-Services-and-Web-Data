@@ -1,23 +1,29 @@
 """Application configuration loaded from environment variables."""
 
-from pydantic import field_validator
+import secrets
+
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
     """Application settings with environment variable loading."""
 
-    database_url: str = "postgresql://postgres:postgres@localhost:5432/f1_racing_db"
-    secret_key: str = "dev-secret-key-change-in-production"
+    database_url: str = "sqlite:///./app.db"
+    secret_key: str = Field(default_factory=lambda: secrets.token_urlsafe(64))
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
     anthropic_api_key: str = ""
     app_name: str = "F1 Racing Intelligence API"
     debug: bool = False
     # Comma-separated allowed CORS origins; defaults to localhost dev origins only
-    cors_origins: str = "http://localhost:3000,http://localhost:8000"
+    cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000,http://localhost:8000,http://127.0.0.1:8000"
     # Optional previous secret key — set during zero-downtime JWT key rotation
     secret_key_previous: str = ""
+    # Optional API key for MCP SSE transport. If empty, only localhost binding is allowed.
+    mcp_api_key: str = ""
+    mcp_sse_host: str = "127.0.0.1"
+    mcp_sse_port: int = 3001
 
     @field_validator("debug", mode="before")
     @classmethod
