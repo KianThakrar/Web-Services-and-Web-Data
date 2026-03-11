@@ -4,6 +4,9 @@ A data-driven REST API built with **FastAPI** and **PostgreSQL** for querying Fo
 
 Built for COMP3011 Web Services and Web Data (University of Leeds, 2025/26).
 
+**Live deployment:** https://api-production-61d4.up.railway.app/
+**Live API docs:** https://api-production-61d4.up.railway.app/docs
+
 ---
 
 ## Quick Start — Docker (Recommended for Examiners)
@@ -102,7 +105,7 @@ source venv/bin/activate
 DEBUG=false pytest tests/ -v
 ```
 
-All 69 tests should pass.
+All 69 tests should pass. Tests are independent of Docker and PostgreSQL — they use an in-memory SQLite database.
 
 ---
 
@@ -232,18 +235,18 @@ This ensures **full reproducibility** for examiners cloning without an API key.
 
 ## Frontend Dashboard
 
-Visiting **http://localhost:8000/** serves an interactive single-page dashboard with six tabs:
+**Live:** https://api-production-61d4.up.railway.app/ — or locally at http://localhost:8000/
+
+An interactive dashboard served directly by FastAPI (`frontend/index.html` + `frontend/styles.css`). No build step required — vanilla JS with Inter font, served as static files.
 
 | Tab | What it shows |
 |-----|--------------|
-| **Win Probability** | Select driver + season + race → animated probability breakdown across 4 factors |
+| **Win Probability** | Select a season + race → ranked table of all drivers with normalised win probabilities (logistic regression, sums to 100%) |
 | **Standings** | Championship standings table for any season 2000–2025 |
-| **Head-to-Head** | Two-driver comparison with optional year-range filter |
-| **Weather Impact** | Driver wet vs dry performance with bar charts + race weather conditions viewer |
-| **AI Summaries** | Claude-generated race narratives with Cached / Live AI badge |
-| **Top Winners** | All-time race winners leaderboard |
-
-No build step — vanilla JS, single HTML file, served directly by FastAPI.
+| **Head-to-Head** | Two-driver career comparison with optional year-range filter |
+| **Weather Impact** | Driver wet vs dry performance (win rate, podiums, DNFs) + race-level weather conditions viewer |
+| **AI Summaries** | Claude Haiku–generated race narratives with Cached / Live AI badge |
+| **Top Winners** | All-time race winners leaderboard (top 10/20/50) |
 
 ---
 
@@ -371,7 +374,8 @@ Full endpoint reference including parameters, request/response schemas, authenti
 │   ├── mcp_openai_demo.py
 │   └── mcp_gemini_demo.py
 ├── frontend/
-│   └── index.html      # Single-page dashboard (served at GET /)
+│   ├── index.html      # Single-page dashboard (served at GET /)
+│   └── styles.css      # External stylesheet (served at /static/styles.css)
 ├── scripts/            # Data seeding and utility scripts
 │   ├── seed.py         # Master entry point (auto-detects CSV vs API)
 │   ├── seed_from_csv.py# Fast CSV-based seed (no API calls)
@@ -381,7 +385,7 @@ Full endpoint reference including parameters, request/response schemas, authenti
 │   ├── seed_drivers.py # Fetch drivers from Jolpica API
 │   ├── seed_constructors.py
 │   └── seed_races.py   # Fetch races 2000–2025 from Jolpica API
-├── tests/              # Pytest test suite (60 tests)
+├── tests/              # Pytest test suite (69 tests)
 ├── alembic/            # Database migrations
 ├── docs/               # API documentation PDF
 ├── mcp_server.py       # MCP server (stdio + SSE transport)
