@@ -43,26 +43,26 @@ CURL_EXAMPLES = {
         curl -X POST http://localhost:8000/api/v1/predictions \\
           -H "Authorization: Bearer <token>" \\
           -H "Content-Type: application/json" \\
-          -d '{"race_id": 84, "predicted_driver_id": 692, "predicted_position": 1}'"""),
+          -d '{"race_id": 456, "predicted_driver_id": 788, "predicted_position": 1}'"""),
     "/api/v1/favourites": textwrap.dedent("""\
         curl -X POST http://localhost:8000/api/v1/favourites \\
           -H "Authorization: Bearer <token>" \\
           -H "Content-Type: application/json" \\
-          -d '{"driver_id": 692}'"""),
+          -d '{"driver_id": 788}'"""),
     "/api/v1/analytics/drivers/standings": 'curl "http://localhost:8000/api/v1/analytics/drivers/standings?season=2024"',
     "/api/v1/analytics/weather/circuits/{circuit_name}": 'curl "http://localhost:8000/api/v1/analytics/weather/circuits/Silverstone%20Circuit"',
-    "/api/v1/analytics/weather/drivers/{driver_id}": 'curl "http://localhost:8000/api/v1/analytics/weather/drivers/332"',
-    "/api/v1/analytics/weather/races/{race_id}": 'curl "http://localhost:8000/api/v1/analytics/weather/races/84"',
+    "/api/v1/analytics/weather/drivers/{driver_id}": 'curl "http://localhost:8000/api/v1/analytics/weather/drivers/331"',
+    "/api/v1/analytics/weather/races/{race_id}": 'curl "http://localhost:8000/api/v1/analytics/weather/races/456"',
     "/api/v1/analytics/races/{race_id}/win-probabilities": 'curl "http://localhost:8000/api/v1/analytics/races/456/win-probabilities"',
-    "/api/v1/analytics/drivers/{driver1_id}/vs/{driver2_id}": 'curl "http://localhost:8000/api/v1/analytics/drivers/332/vs/695?year_from=2020&year_to=2024"',
-    "/api/v1/analytics/drivers/{driver_id}/win-probability": 'curl "http://localhost:8000/api/v1/analytics/drivers/332/win-probability?circuit_name=Silverstone%20Circuit"',
-    "/api/v1/analytics/drivers/{driver_id}/circuits/{circuit_name}": 'curl "http://localhost:8000/api/v1/analytics/drivers/332/circuits/Silverstone%20Circuit"',
-    "/api/v1/ai/races/{race_id}/summary": 'curl "http://localhost:8000/api/v1/ai/races/84/summary"',
+    "/api/v1/analytics/drivers/{driver1_id}/vs/{driver2_id}": 'curl "http://localhost:8000/api/v1/analytics/drivers/331/vs/788?year_from=2020&year_to=2024"',
+    "/api/v1/analytics/drivers/{driver_id}/win-probability": 'curl "http://localhost:8000/api/v1/analytics/drivers/331/win-probability?circuit_name=Silverstone%20Circuit"',
+    "/api/v1/analytics/drivers/{driver_id}/circuits/{circuit_name}": 'curl "http://localhost:8000/api/v1/analytics/drivers/331/circuits/Silverstone%20Circuit"',
+    "/api/v1/ai/races/{race_id}/summary": 'curl "http://localhost:8000/api/v1/ai/races/456/summary"',
 }
 
 EXAMPLE_RESPONSES = {
     "/api/v1/analytics/weather/drivers/{driver_id}": json.dumps({
-        "driver_id": 332, "driver_name": "Lewis Hamilton", "nationality": "British",
+        "driver_id": 331, "driver_name": "Lewis Hamilton", "nationality": "British",
         "total_races_with_weather_data": 189,
         "wet": {
             "condition": "Wet", "races": 68, "wins": 12, "podiums": 23,
@@ -82,17 +82,17 @@ EXAMPLE_RESPONSES = {
         "wet_races": 17, "dry_races": 10
     }, indent=2),
     "/api/v1/analytics/races/{race_id}/win-probabilities": json.dumps([
-        {"driver_id": 695, "driver_name": "Max Verstappen", "win_probability": 0.155,
+        {"driver_id": 788, "driver_name": "Max Verstappen", "win_probability": 0.155,
          "circuit_name": "Bahrain International Circuit", "model": "logistic_regression",
          "factors": {"circuit_win_rate": 0.22, "overall_win_rate": 0.42,
                      "recent_form_rate": 0.68, "constructor_win_rate": 0.35}},
-        {"driver_id": 857, "driver_name": "Lando Norris", "win_probability": 0.118,
+        {"driver_id": 556, "driver_name": "Lando Norris", "win_probability": 0.118,
          "circuit_name": "Bahrain International Circuit", "model": "logistic_regression",
          "factors": {"circuit_win_rate": 0.08, "overall_win_rate": 0.11,
                      "recent_form_rate": 0.55, "constructor_win_rate": 0.22}}
     ], indent=2),
     "/api/v1/analytics/drivers/{driver_id}/win-probability": json.dumps({
-        "driver_id": 332, "driver_name": "Lewis Hamilton",
+        "driver_id": 331, "driver_name": "Lewis Hamilton",
         "circuit_name": "Silverstone Circuit", "win_probability": 0.507,
         "model": "logistic_regression",
         "factors": {"circuit_win_rate": 0.48, "circuit_appearances": 20,
@@ -507,19 +507,22 @@ html = f"""<!DOCTYPE html>
     <div class="cover-stat"><div class="val">13</div><div class="lbl">MCP Tools</div></div>
     <div class="cover-stat"><div class="val">69</div><div class="lbl">Tests</div></div>
     <div class="cover-stat"><div class="val">12,641</div><div class="lbl">Data Rows</div></div>
-    <div class="cover-stat"><div class="val">2</div><div class="lbl">External APIs</div></div>
   </div>
 </div>
 
 <!-- Quick reference -->
 <div class="info-grid">
   <div class="info-card">
-    <h4>Base URL</h4>
+    <h4>Base URL (Local)</h4>
     <p><code>http://localhost:8000</code></p>
   </div>
   <div class="info-card">
-    <h4>Interactive Docs</h4>
-    <p><code>http://localhost:8000/docs</code> (Swagger UI)</p>
+    <h4>Base URL (Live)</h4>
+    <p><code>https://api-production-61d4.up.railway.app</code></p>
+  </div>
+  <div class="info-card">
+    <h4>Interactive Docs (Swagger UI)</h4>
+    <p><code>/docs</code> — available on both local and live deployments</p>
   </div>
   <div class="info-card">
     <h4>Authentication</h4>
@@ -527,7 +530,11 @@ html = f"""<!DOCTYPE html>
   </div>
   <div class="info-card">
     <h4>Response Format</h4>
-    <p>All responses are <strong>JSON</strong>. Errors include <code>"detail"</code> message.</p>
+    <p>All responses are <strong>JSON</strong>. Errors return <code>&#123;"detail": "message"&#125;</code>.</p>
+  </div>
+  <div class="info-card">
+    <h4>API Versioning</h4>
+    <p>All endpoints are prefixed <code>/api/v1/</code>. Version is included in every path.</p>
   </div>
 </div>
 
@@ -554,8 +561,43 @@ html = f"""<!DOCTYPE html>
   <tr><td><code style="color:#f44336;font-weight:700">500</code></td><td>Internal Server Error</td><td>Unhandled exceptions</td></tr>
 </table>
 
+<!-- Pagination -->
+<h2>Pagination &amp; Filtering</h2>
+<p>All list endpoints support cursor-less pagination via query parameters:</p>
+<table>
+  <tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+  <tr><td><code>limit</code></td><td>integer</td><td>100</td><td>Maximum number of records to return</td></tr>
+  <tr><td><code>offset</code></td><td>integer</td><td>0</td><td>Number of records to skip (for paging through results)</td></tr>
+</table>
+<p>Filtering parameters vary by resource — see each endpoint for supported filters (e.g. <code>?nationality=British</code>, <code>?season=2024</code>, <code>?name=hamilton</code>).</p>
+<div class="example-box">
+  <h5>Example — Page 2 of British drivers (20 per page)</h5>
+  <pre>curl "http://localhost:8000/api/v1/drivers?nationality=British&limit=20&offset=20"</pre>
+</div>
+
+<!-- Data coverage -->
+<h2>Data Coverage</h2>
+<table>
+  <tr><th>Resource</th><th>Count</th><th>Coverage</th></tr>
+  <tr><td>Drivers</td><td>874</td><td>All F1 drivers with championship points, 2000–2025</td></tr>
+  <tr><td>Constructors</td><td>214</td><td>All constructor entries, 2000–2025</td></tr>
+  <tr><td>Races</td><td>503</td><td>Full calendar, seasons 2000–2025</td></tr>
+  <tr><td>Race Results</td><td>10,550</td><td>Full grid finishing order, points, and status per race</td></tr>
+  <tr><td>Weather Records</td><td>500</td><td>Historical race-day weather from Open-Meteo Archive API</td></tr>
+</table>
+<p style="color:#666;font-size:10px">Data sourced from Jolpica F1 API (Ergast-compatible) and Open-Meteo Archive API. All data is bundled as CSV and seeded at startup — no external API access required to run.</p>
+
+<!-- TOC -->
+<div class="toc" style="page-break-before: always;">
+  <div class="toc-title">Endpoint Reference — Table of Contents</div>
+  {toc_html}
+</div>
+
+<!-- Endpoint reference -->
+{endpoint_html}
+
 <!-- Models -->
-<h2>Data Models</h2>
+<h2>Appendix: Analytics Models</h2>
 <div class="model-box">
   <strong>Win Probability Model:</strong> The <code>GET /api/v1/analytics/drivers/{{id}}/win-probability</code> endpoint
   uses a logistic regression model trained on historical results with walk-forward feature construction.
@@ -568,7 +610,7 @@ html = f"""<!DOCTYPE html>
 </div>
 
 <!-- MCP Server -->
-<h2>MCP Server</h2>
+<h2>Appendix: MCP Server</h2>
 <p>The project exposes all F1 data as <strong>Model Context Protocol (MCP) tools</strong> for AI client integration (13 tools):</p>
 <table>
   <tr><th>Transport</th><th>Command</th><th>Compatible Clients</th></tr>
@@ -576,15 +618,6 @@ html = f"""<!DOCTYPE html>
   <tr><td>SSE (HTTP)</td><td><code>python mcp_server.py --sse</code></td><td>Any MCP client (Claude, OpenAI Agents, Google Gemini ADK)</td></tr>
 </table>
 <p>Verify with: <code>python -m scripts.test_mcp</code></p>
-
-<!-- TOC -->
-<div class="toc" style="page-break-before: always;">
-  <div class="toc-title">Endpoint Reference — Table of Contents</div>
-  {toc_html}
-</div>
-
-<!-- Endpoint reference -->
-{endpoint_html}
 
 </body>
 </html>"""
