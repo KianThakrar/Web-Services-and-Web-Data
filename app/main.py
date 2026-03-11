@@ -6,6 +6,7 @@ import os
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
@@ -104,7 +105,10 @@ app.include_router(ai.router)
 # ---------------------------------------------------------------------------
 # Frontend — serve the SPA dashboard at the root path
 # ---------------------------------------------------------------------------
-_FRONTEND = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "index.html")
+_FRONTEND_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend")
+_FRONTEND = os.path.join(_FRONTEND_DIR, "index.html")
+
+app.mount("/static", StaticFiles(directory=_FRONTEND_DIR), name="static")
 
 
 @app.get("/", include_in_schema=False)
