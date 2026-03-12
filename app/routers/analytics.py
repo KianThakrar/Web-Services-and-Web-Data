@@ -122,10 +122,12 @@ def race_win_probabilities(
     db: Session = Depends(get_db),
 ):
     """
-    Normalised win probabilities for every driver in a race.
+    Independent win probabilities for every driver in a race.
 
-    Computes each driver's raw ML win probability, then normalises so that all
-    probabilities sum to 1.0. Returns drivers sorted by probability descending.
+    Computes each driver's logistic regression win probability independently —
+    P(driver wins) given their career features at this circuit. Probabilities
+    are not normalised and will not sum to 1.0; each is an honest per-driver
+    binary prediction. Returns drivers sorted by probability descending.
     """
     result = predict_race_win_probabilities(db, race_id)
     if result is None:

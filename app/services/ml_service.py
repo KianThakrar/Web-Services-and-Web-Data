@@ -303,10 +303,12 @@ def predict_win_probability(db: Session, driver_id: int, circuit_name: str | Non
 
 
 def predict_race_win_probabilities(db: Session, race_id: int) -> list[dict] | None:
-    """Return normalised win probabilities for all drivers in a given race.
+    """Return independent win probabilities for all drivers in a given race.
 
-    Fetches every driver who competed, computes their raw ML probability,
-    then normalises so that all probabilities sum to 1.0.
+    Fetches every driver who competed and computes their raw logistic regression
+    probability of winning. Each probability is an independent binary prediction
+    — P(this driver wins) given their historical features. Probabilities are not
+    normalised and will not sum to 1.0; each is an honest per-driver estimate.
     """
     race = db.query(Race).filter(Race.id == race_id).first()
     if not race:
@@ -328,15 +330,6 @@ def predict_race_win_probabilities(db: Session, race_id: int) -> list[dict] | No
 
     if not entries:
         return None
-
-    total = sum(e["win_probability"] for e in entries)
-    if total > 0:
-        for e in entries:
-            e["win_probability"] = round(e["win_probability"] / total, 4)
-    else:
-        equal = round(1.0 / len(entries), 4)
-        for e in entries:
-            e["win_probability"] = equal
 
     entries.sort(key=lambda x: x["win_probability"], reverse=True)
     return entries

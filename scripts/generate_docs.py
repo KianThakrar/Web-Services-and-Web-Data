@@ -82,11 +82,11 @@ EXAMPLE_RESPONSES = {
         "wet_races": 17, "dry_races": 10
     }, indent=2),
     "/api/v1/analytics/races/{race_id}/win-probabilities": json.dumps([
-        {"driver_id": 788, "driver_name": "Max Verstappen", "win_probability": 0.155,
+        {"driver_id": 788, "driver_name": "Max Verstappen", "win_probability": 0.312,
          "circuit_name": "Bahrain International Circuit", "model": "logistic_regression",
          "factors": {"circuit_win_rate": 0.22, "overall_win_rate": 0.42,
                      "recent_form_rate": 0.68, "constructor_win_rate": 0.35}},
-        {"driver_id": 556, "driver_name": "Lando Norris", "win_probability": 0.118,
+        {"driver_id": 556, "driver_name": "Lando Norris", "win_probability": 0.187,
          "circuit_name": "Bahrain International Circuit", "model": "logistic_regression",
          "factors": {"circuit_win_rate": 0.08, "overall_win_rate": 0.11,
                      "recent_form_rate": 0.55, "constructor_win_rate": 0.22}}

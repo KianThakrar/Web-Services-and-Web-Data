@@ -42,8 +42,7 @@
     <div id="prob" class="panel active">
       <div class="card">
         <div class="card-title">Race Win Probability</div>
-        <div class="card-sub">Select a race to see all drivers ranked by predicted win probability. Probabilities are
-          normalised to sum to 100% — logistic regression trained on 9,926 historical race results.</div>
+        <div class="card-sub">Select a race to see all drivers ranked by predicted win probability. Each probability is an independent binary prediction — logistic regression trained on 9,926 historical race results.</div>
         <div class="row">
           <div class="field" style="max-width:130px">
             <label>Season</label>
@@ -319,7 +318,7 @@
         <td><div class="bar-bg"><div class="bar-fg" style="width:${barW}%"></div></div></td>
       </tr>`;
         }).join('');
-        setText('pd-circuit-label', data[0]?.circuit_name ? `Circuit: ${data[0].circuit_name} · Probabilities normalised to sum to 100%` : '');
+        setText('pd-circuit-label', data[0]?.circuit_name ? `Circuit: ${data[0].circuit_name} · Independent per-driver win probabilities (do not sum to 100%)` : '');
         show('pd-result');
       } catch (e) {
         hide('pd-loading'); show('pd-err'); setText('pd-err', e.message);
