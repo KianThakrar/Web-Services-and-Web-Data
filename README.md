@@ -16,8 +16,11 @@ Built for COMP3011 Web Services and Web Data (University of Leeds, 2025/26).
 ```bash
 git clone https://github.com/KianThakrar/Web-Services-and-Web-Data.git
 cd Web-Services-and-Web-Data
+cp .env.example .env
 docker-compose up --build
 ```
+
+> `.env` provides the database password and JWT secret. The defaults in `.env.example` work out of the box — no editing required.
 
 **What happens on first run:**
 1. PostgreSQL starts inside Docker (no local database installation needed)
