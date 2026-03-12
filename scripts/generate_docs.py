@@ -190,6 +190,76 @@ def render_responses(responses: dict) -> str:
     )
 
 
+def render_schemas_section() -> str:
+    """Render all Pydantic response/request schemas as a reference section."""
+    # Skip internal FastAPI/Pydantic validation error schemas
+    skip = {"ValidationError", "HTTPValidationError", "Body_login_api_v1_auth_login_post"}
+    html = '<h2>Appendix: Data Models &amp; Response Schemas</h2>'
+    html += '<p style="color:#666;font-size:11px;margin-bottom:12px">All request and response objects are validated using Pydantic. The schemas below document every field returned or accepted by the API.</p>'
+
+    for name, schema in sorted(definitions.items()):
+        if name in skip:
+            continue
+
+        props = schema.get("properties", {})
+        if not props:
+            continue
+
+        required_fields = set(schema.get("required", []))
+        title = schema.get("title", name)
+        desc = schema.get("description", "")
+
+        rows = ""
+        for field, info in props.items():
+            # Resolve $ref
+            if "$ref" in info:
+                info = definitions.get(info["$ref"].split("/")[-1], info)
+
+            # Handle anyOf (Pydantic optional fields)
+            if "anyOf" in info:
+                types = [t.get("type", t.get("$ref", "").split("/")[-1]) for t in info["anyOf"] if t != {"type": "null"}]
+                typ = " | ".join(t for t in types if t) or "any"
+            else:
+                typ = info.get("type", "")
+                if not typ and "$ref" in info:
+                    typ = info["$ref"].split("/")[-1]
+                if not typ:
+                    typ = "object"
+
+            # Append format if present
+            fmt = info.get("format", "")
+            if fmt and fmt not in typ:
+                typ = f"{typ} ({fmt})"
+
+            req = '<span style="color:#4caf50;font-weight:700">required</span>' if field in required_fields else '<span style="color:#999">optional</span>'
+            field_desc = info.get("description", "")
+            example = info.get("example", "")
+            if example:
+                field_desc += f' <span style="color:#999">e.g. <code>{example}</code></span>'
+
+            rows += (
+                f'<tr>'
+                f'<td><code>{field}</code></td>'
+                f'<td style="color:#666">{typ}</td>'
+                f'<td>{req}</td>'
+                f'<td style="color:#555">{field_desc}</td>'
+                f'</tr>'
+            )
+
+        html += f'<div class="endpoint" style="margin-bottom:10px">'
+        html += f'<div style="font-size:12px;font-weight:700;color:#1a1a2e;margin-bottom:2px">{title}</div>'
+        if desc:
+            html += f'<div style="font-size:10px;color:#666;margin-bottom:6px">{desc}</div>'
+        html += (
+            '<table><thead><tr>'
+            '<th>Field</th><th>Type</th><th>Required</th><th>Description</th>'
+            '</tr></thead><tbody>' + rows + '</tbody></table>'
+        )
+        html += '</div>'
+
+    return html
+
+
 def render_curl(path: str) -> str:
     curl = CURL_EXAMPLES.get(path, "")
     if not curl:
@@ -265,6 +335,9 @@ for tag, endpoints in tag_endpoints.items():
         endpoint_html += render_curl(path)
         endpoint_html += '</div>'
 
+
+# ── Pre-generate schemas section ─────────────────────────────────────────────
+schemas_section = render_schemas_section()
 
 # ── Final HTML ───────────────────────────────────────────────────────────────
 html = f"""<!DOCTYPE html>
@@ -595,6 +668,9 @@ html = f"""<!DOCTYPE html>
 
 <!-- Endpoint reference -->
 {endpoint_html}
+
+<!-- Data Models / Response Schemas -->
+{schemas_section}
 
 <!-- Models -->
 <h2>Appendix: Analytics Models</h2>
