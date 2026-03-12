@@ -73,7 +73,7 @@
                 <th>#</th>
                 <th>Driver</th>
                 <th>Win Probability</th>
-                <th style="min-width:160px">Relative</th>
+                <th style="min-width:160px" id="pd-bar-header">Scale</th>
               </tr>
             </thead>
             <tbody id="pd-tbody"></tbody>
@@ -331,6 +331,7 @@
           ? 'Normalised relative scores — heuristic rescaling, not a joint probability model'
           : 'Raw independent binary probabilities — values do not sum to 100%';
         setText('pd-circuit-label', data[0]?.circuit_name ? `Circuit: ${data[0].circuit_name} · ${modeNote}` : modeNote);
+        setText('pd-bar-header', isNormalised ? 'Relative' : 'Scale');
         show('pd-result');
       } catch (e) {
         hide('pd-loading'); show('pd-err'); setText('pd-err', e.message);
