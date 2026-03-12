@@ -81,16 +81,28 @@ EXAMPLE_RESPONSES = {
         "avg_temperature_max": 20.5, "wet_race_percentage": 63.0,
         "wet_races": 17, "dry_races": 10
     }, indent=2),
-    "/api/v1/analytics/races/{race_id}/win-probabilities": json.dumps([
-        {"driver_id": 788, "driver_name": "Max Verstappen", "win_probability": 0.312,
-         "circuit_name": "Bahrain International Circuit", "model": "logistic_regression",
-         "factors": {"circuit_win_rate": 0.22, "overall_win_rate": 0.42,
-                     "recent_form_rate": 0.68, "constructor_win_rate": 0.35}},
-        {"driver_id": 556, "driver_name": "Lando Norris", "win_probability": 0.187,
-         "circuit_name": "Bahrain International Circuit", "model": "logistic_regression",
-         "factors": {"circuit_win_rate": 0.08, "overall_win_rate": 0.11,
-                     "recent_form_rate": 0.55, "constructor_win_rate": 0.22}}
-    ], indent=2),
+    "/api/v1/analytics/races/{race_id}/win-probabilities": (
+        "# Default (?normalise=false): raw independent binary probabilities\n"
+        + json.dumps([
+            {"driver_id": 788, "driver_name": "Max Verstappen", "win_probability": 0.312,
+             "circuit_name": "Bahrain International Circuit", "model": "logistic_regression",
+             "scoring_method": "independent_binary",
+             "factors": {"circuit_win_rate": 0.22, "overall_win_rate": 0.42,
+                         "recent_form_rate": 0.68, "constructor_win_rate": 0.35}},
+            {"driver_id": 556, "driver_name": "Lando Norris", "win_probability": 0.187,
+             "circuit_name": "Bahrain International Circuit", "model": "logistic_regression",
+             "scoring_method": "independent_binary",
+             "factors": {"circuit_win_rate": 0.08, "overall_win_rate": 0.11,
+                         "recent_form_rate": 0.55, "constructor_win_rate": 0.22}}
+        ], indent=2)
+        + "\n\n# With ?normalise=true: scores rescaled to sum to 1.0 (heuristic)\n"
+        + json.dumps([
+            {"driver_id": 788, "driver_name": "Max Verstappen", "win_probability": 0.197,
+             "scoring_method": "normalised_relative"},
+            {"driver_id": 556, "driver_name": "Lando Norris", "win_probability": 0.118,
+             "scoring_method": "normalised_relative"}
+        ], indent=2)
+    ),
     "/api/v1/analytics/drivers/{driver_id}/win-probability": json.dumps({
         "driver_id": 331, "driver_name": "Lewis Hamilton",
         "circuit_name": "Silverstone Circuit", "win_probability": 0.507,

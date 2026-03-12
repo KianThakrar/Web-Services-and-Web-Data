@@ -119,17 +119,32 @@ def constructor_era_dominance(db: Session = Depends(get_db)):
 @router.get("/races/{race_id}/win-probabilities")
 def race_win_probabilities(
     race_id: int = Path(..., gt=0),
+    normalise: bool = Query(
+        default=False,
+        description=(
+            "If false (default): return raw independent binary probabilities — "
+            "P(driver wins) per driver, will not sum to 1.0. "
+            "If true: divide raw scores by their sum so all values sum to 1.0 "
+            "(heuristic rescaling for interpretability, not a joint probability model)."
+        ),
+    ),
     db: Session = Depends(get_db),
 ):
     """
-    Independent win probabilities for every driver in a race.
+    Win probabilities for every driver in a race.
 
-    Computes each driver's logistic regression win probability independently —
-    P(driver wins) given their career features at this circuit. Probabilities
-    are not normalised and will not sum to 1.0; each is an honest per-driver
-    binary prediction. Returns drivers sorted by probability descending.
+    Each driver's logistic regression score is an independent binary prediction —
+    P(driver wins) given their career, circuit, form, and constructor features.
+
+    Use `?normalise=false` (default) for raw per-driver probabilities.
+    Use `?normalise=true` for scores rescaled to sum to 1.0 — useful for
+    relative comparison on a dashboard, but note this is a heuristic post-processing
+    step, not a principled joint probability model.
+
+    The `scoring_method` field in each entry indicates which mode was used:
+    `independent_binary` or `normalised_relative`.
     """
-    result = predict_race_win_probabilities(db, race_id)
+    result = predict_race_win_probabilities(db, race_id, normalise=normalise)
     if result is None:
         raise HTTPException(status_code=404, detail="Race not found or has no results")
     return result

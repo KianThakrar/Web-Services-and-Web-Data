@@ -302,13 +302,23 @@ def predict_win_probability(db: Session, driver_id: int, circuit_name: str | Non
     }
 
 
-def predict_race_win_probabilities(db: Session, race_id: int) -> list[dict] | None:
-    """Return independent win probabilities for all drivers in a given race.
+def predict_race_win_probabilities(
+    db: Session,
+    race_id: int,
+    normalise: bool = False,
+) -> list[dict] | None:
+    """Return win probabilities for all drivers in a given race.
 
-    Fetches every driver who competed and computes their raw logistic regression
-    probability of winning. Each probability is an independent binary prediction
-    — P(this driver wins) given their historical features. Probabilities are not
-    normalised and will not sum to 1.0; each is an honest per-driver estimate.
+    Each driver's raw logistic regression probability is an independent binary
+    prediction — P(this driver wins) given their historical features.
+
+    When normalise=False (default): raw probabilities are returned. Each is an
+    honest per-driver estimate; they will not sum to 1.0.
+
+    When normalise=True: raw scores are divided by their sum so that all values
+    sum to 1.0. This is a heuristic rescaling for interpretability (analogous to
+    softmax), not a principled joint probability model. The scoring_method field
+    in each entry indicates which mode was used.
     """
     race = db.query(Race).filter(Race.id == race_id).first()
     if not race:
@@ -330,6 +340,22 @@ def predict_race_win_probabilities(db: Session, race_id: int) -> list[dict] | No
 
     if not entries:
         return None
+
+    if normalise:
+        total = sum(e["win_probability"] for e in entries)
+        if total > 0:
+            for e in entries:
+                e["win_probability"] = round(e["win_probability"] / total, 4)
+        else:
+            equal = round(1.0 / len(entries), 4)
+            for e in entries:
+                e["win_probability"] = equal
+        scoring = "normalised_relative"
+    else:
+        scoring = "independent_binary"
+
+    for e in entries:
+        e["scoring_method"] = scoring
 
     entries.sort(key=lambda x: x["win_probability"], reverse=True)
     return entries

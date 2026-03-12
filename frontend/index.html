@@ -54,6 +54,13 @@
               <option value="">— select a race —</option>
             </select>
           </div>
+          <div class="field" style="max-width:200px">
+            <label>Scoring mode</label>
+            <select id="pd-normalise">
+              <option value="false">Raw (independent)</option>
+              <option value="true">Normalised (relative)</option>
+            </select>
+          </div>
           <button class="btn" onclick="calcProb()">Calculate</button>
         </div>
         <div id="pd-err" class="err hidden"></div>
@@ -298,13 +305,15 @@
 
     async function calcProb() {
       const raceId = $('pd-race').value;
+      const normalise = $('pd-normalise').value;
       hide('pd-err'); hide('pd-result');
       if (!raceId) { show('pd-err'); setText('pd-err', 'Please select a race.'); return; }
       show('pd-loading');
       try {
-        const data = await get(`/api/v1/analytics/races/${raceId}/win-probabilities`);
+        const data = await get(`/api/v1/analytics/races/${raceId}/win-probabilities?normalise=${normalise}`);
         hide('pd-loading');
         const maxProb = data[0].win_probability;
+        const isNormalised = data[0]?.scoring_method === 'normalised_relative';
         const tbody = $('pd-tbody');
         tbody.innerHTML = data.map((d, i) => {
           const n = i + 1;
@@ -318,7 +327,10 @@
         <td><div class="bar-bg"><div class="bar-fg" style="width:${barW}%"></div></div></td>
       </tr>`;
         }).join('');
-        setText('pd-circuit-label', data[0]?.circuit_name ? `Circuit: ${data[0].circuit_name} · Independent per-driver win probabilities (do not sum to 100%)` : '');
+        const modeNote = isNormalised
+          ? 'Normalised relative scores — heuristic rescaling, not a joint probability model'
+          : 'Raw independent binary probabilities — values do not sum to 100%';
+        setText('pd-circuit-label', data[0]?.circuit_name ? `Circuit: ${data[0].circuit_name} · ${modeNote}` : modeNote);
         show('pd-result');
       } catch (e) {
         hide('pd-loading'); show('pd-err'); setText('pd-err', e.message);
