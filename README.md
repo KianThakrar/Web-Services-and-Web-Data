@@ -244,7 +244,7 @@ An interactive dashboard served directly by FastAPI (`frontend/index.html` + `fr
 
 | Tab | What it shows |
 |-----|--------------|
-| **Win Probability** | Select a season + race → ranked table of all drivers with normalised win probabilities (logistic regression, sums to 100%) |
+| **Win Probability** | Select a season + race → ranked table of all drivers with win probabilities (logistic regression; raw independent probabilities by default, optionally normalised to sum to 100%) |
 | **Standings** | Championship standings table for any season 2000–2025 |
 | **Head-to-Head** | Two-driver career comparison with optional year-range filter |
 | **Weather Impact** | Driver wet vs dry performance (win rate, podiums, DNFs) + race-level weather conditions viewer |
